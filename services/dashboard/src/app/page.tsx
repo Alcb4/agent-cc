@@ -173,6 +173,18 @@ export default function Page() {
     }
   };
 
+  // The form is forced open when there is nothing else to show; Cancel both
+  // hides it and discards the draft so stale values can't silently create a
+  // project against the wrong repo later.
+  const mustCreate = projects.length === 0;
+  const formOpen = showNewProject || mustCreate;
+  const onCancelNewProject = (): void => {
+    setShowNewProject(false);
+    setPName("");
+    setPRepo("");
+    setPModel("");
+  };
+
   const onDeleteProject = async (p: ProjectSummary): Promise<void> => {
     const msg =
       p.workspaceCount > 0
@@ -358,7 +370,7 @@ export default function Page() {
 
           {tab === "projects" && (
             <>
-              {showNewProject || projects.length === 0 ? (
+              {formOpen ? (
                 <div className="stack">
                   <span className="micro">New project</span>
                   <input placeholder="name" value={pName} onChange={(e) => setPName(e.target.value)} />
@@ -367,8 +379,8 @@ export default function Page() {
                   <button className="primary" onClick={() => void onCreateProject()}>
                     + New project
                   </button>
-                  {projects.length > 0 && (
-                    <button onClick={() => setShowNewProject(false)}>Cancel</button>
+                  {!mustCreate && (
+                    <button onClick={onCancelNewProject}>Cancel</button>
                   )}
                 </div>
               ) : (
@@ -528,7 +540,10 @@ export default function Page() {
                       ← {tab === "board" ? "Board" : "Watch all"}
                     </button>
                   )}
-                  {active.name} ·{" "}
+                  <span className="term-name" title={active.name}>
+                    {active.name}
+                  </span>{" "}
+                  ·{" "}
                   <span className="term-branch" title={active.branch}>
                     {active.branch}
                   </span>{" "}

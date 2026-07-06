@@ -375,15 +375,24 @@ input {
 .term-id {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--s-2);
   flex: 1 1 auto;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
 }
 
-.term-branch {
+/* Both the name and the path can give way (path first — it shrinks to a
+   smaller floor) so the status pill and activity badge never get clipped. */
+.term-name {
   flex: 0 1 auto;
+  min-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.term-branch {
+  flex: 0 4 auto;
   min-width: 40px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1057,12 +1066,10 @@ select {
   font-size: 11px;
 }
 
-/* ---- B3 activity badge (active / idle) ---- */
-/* When the badge directly follows a status pill (terminal header, board and
-   watch cards) give the two indicators breathing room instead of mashing. */
-.pill + .act {
-  margin-left: var(--s-2);
-}
+/* ---- B3 activity badge (active / idle) ----
+   Pill/badge separation comes from the flex-container gaps (.term-id,
+   .watch-head, .board-card-head) — no adjacent-sibling margin, which would
+   stack on top of those gaps. */
 .act {
   display: inline-flex;
   align-items: center;
