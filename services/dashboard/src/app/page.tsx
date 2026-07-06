@@ -568,9 +568,17 @@ export default function Page() {
                   )}
                 </div>
               </div>
+              {active.status === "ended" && (
+                <div className="term-note">
+                  <span className="micro">
+                    Session ended — pane is read-only. Run summary is in Memory / Runs →
+                  </span>
+                </div>
+              )}
               <Terminal
                 key={active.id}
                 workspace={active}
+                readOnly={active.status === "ended"}
                 onEnded={() => {
                   setRightTab("runs");
                   setRefreshKey((k) => k + 1);
