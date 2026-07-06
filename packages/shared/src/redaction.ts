@@ -57,10 +57,14 @@ export function redactUrlCredentials(text: string): string {
 
 // Terminal escape sequences: CSI (colors, cursor movement, private modes like
 // [?2026l), OSC (titles, hyperlinks), DCS/SOS/PM/APC strings, and lone ESC+char.
+// String terminators (BEL / ESC \) are REQUIRED: captures sliced mid-sequence
+// (the supervisor caps scrollback) must not let an unterminated OSC/DCS eat
+// legitimate text to end-of-input — the fallback branch strips just the
+// ESC+intro and leaves the content visible instead.
 const ansiSequence =
   // eslint-disable-next-line no-control-regex
-  /\x1b(?:\[[0-9;:<=>?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)?|[PX^_][^\x1b]*(?:\x1b\\)?|[ -/]*[0-~])/g;
-// Remaining C0 control chars except tab/newline (carriage returns collapse away).
+  /\x1b(?:\[[0-9;:<=>?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[PX^_][^\x1b]*\x1b\\|[ -/]*[0-~])/g;
+// Remaining C0 control chars except tab/newline.
 // eslint-disable-next-line no-control-regex
 const controlChars = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g;
 
@@ -68,9 +72,13 @@ const controlChars = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g;
  * Strip terminal escape sequences and control characters from captured pane
  * output. Raw tmux captures are full of SGR/cursor/mode sequences that render
  * as garbage anywhere outside a terminal (memory summaries, injected context).
+ * Carriage returns become newlines rather than vanishing: deleting them would
+ * splice overwritten lines into strings that were never contiguous on screen,
+ * which both fabricates credential-shaped matches for the redactors and lets
+ * real ones hide.
  */
 export function stripControlSequences(text: string): string {
-  return text.replace(ansiSequence, "").replace(controlChars, "").replace(/\r/g, "");
+  return text.replace(/\r\n?/g, "\n").replace(ansiSequence, "").replace(controlChars, "");
 }
 
 /**

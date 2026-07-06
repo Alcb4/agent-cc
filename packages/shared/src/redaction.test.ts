@@ -28,8 +28,21 @@ describe("stripControlSequences", () => {
     expect(stripControlSequences("\x1b]0;title\x07a\tb\nc\x1b(B")).toBe("a\tb\nc");
   });
 
-  test("removes carriage returns and stray control chars", () => {
+  test("removes stray control chars; carriage returns become newlines", () => {
     expect(stripControlSequences("line1\r\nline2\x08\x00")).toBe("line1\nline2");
+    // \r must not splice overwritten lines together (would fabricate or hide
+    // credential-shaped strings for the redactors)
+    expect(stripControlSequences("password: ****\rDone.")).toBe("password: ****\nDone.");
+  });
+
+  test("unterminated OSC/DCS does not eat text to end of input", () => {
+    // capture sliced mid-sequence: only the ESC+intro goes, content survives
+    expect(stripControlSequences("before \x1bPline1\nline2 important")).toBe(
+      "before line1\nline2 important",
+    );
+    expect(stripControlSequences("before \x1b]0;title\nreal text")).toBe(
+      "before 0;title\nreal text",
+    );
   });
 
   test("leaves plain text untouched", () => {
