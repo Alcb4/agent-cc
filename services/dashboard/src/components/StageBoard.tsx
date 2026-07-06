@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Workspace, ProjectSummary, WorkspaceActivity, WorkspaceStage } from "@agent-cc/shared";
 import { mergeWorkspace, keepWorkspace, discardWorkspace, syncWorkspace, setStage } from "@/lib/api";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { activityLabel } from "@/lib/activity";
 import { clickableRow } from "@/lib/a11y";
 
@@ -39,6 +40,9 @@ export function StageBoard({
   }, [projects]);
 
   const byStage = (stage: WorkspaceStage) => workspaces.filter((w) => w.stage === stage);
+
+  // Themed destructive confirm (replaces window.confirm).
+  const [confirmReq, setConfirmReq] = useState<{ message: string; run: () => void } | null>(null);
 
   const act = async (label: string, fn: () => Promise<unknown>) => {
     try {
@@ -119,7 +123,10 @@ export function StageBoard({
                             w.stage === "done"
                               ? `Remove "${w.name}" from the board? (its work was already merged/kept)`
                               : `Discard "${w.name}"? This ends its session and throws away its worktree + branch.`;
-                          if (confirm(msg)) void act("Remove", () => discardWorkspace(w.id));
+                          setConfirmReq({
+                            message: msg,
+                            run: () => void act("Remove", () => discardWorkspace(w.id)),
+                          });
                         }}
                       >
                         ✕
@@ -133,6 +140,16 @@ export function StageBoard({
           </div>
         );
       })}
+      <ConfirmDialog
+        open={confirmReq !== null}
+        message={confirmReq?.message ?? ""}
+        confirmLabel="Remove"
+        onConfirm={() => {
+          confirmReq?.run();
+          setConfirmReq(null);
+        }}
+        onCancel={() => setConfirmReq(null)}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { ConfigPanel, type ConfigTab } from "@/components/ConfigPanel";
 import { SecurityPanel } from "@/components/SecurityPanel";
 import { ProjectRootPicker } from "@/components/ProjectRootPicker";
 import { ModelSelect } from "@/components/ModelSelect";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { activityLabel } from "@/lib/activity";
 import { clickableRow } from "@/lib/a11y";
 import {
@@ -186,20 +187,29 @@ export default function Page() {
     setPModel("");
   };
 
-  const onDeleteProject = async (p: ProjectSummary): Promise<void> => {
+  // Destructive-action confirmation, themed (replaces window.confirm).
+  const [confirmReq, setConfirmReq] = useState<{ message: string; run: () => void } | null>(null);
+
+  const onDeleteProject = (p: ProjectSummary): void => {
     const msg =
       p.workspaceCount > 0
         ? `Delete project "${p.name}" and its ${p.workspaceCount} task(s)? This discards all their worktrees + branches.`
         : `Delete project "${p.name}"?`;
-    if (!confirm(msg)) return;
-    try {
-      await deleteProject(p.id, p.workspaceCount > 0);
-      if (selectedProjectId === p.id) setSelectedProjectId(null);
-      await refresh();
-      setRefreshKey((k) => k + 1);
-    } catch (e) {
-      setToast(e instanceof Error ? e.message : String(e));
-    }
+    setConfirmReq({
+      message: msg,
+      run: () => {
+        void (async () => {
+          try {
+            await deleteProject(p.id, p.workspaceCount > 0);
+            if (selectedProjectId === p.id) setSelectedProjectId(null);
+            await refresh();
+            setRefreshKey((k) => k + 1);
+          } catch (e) {
+            setToast(e instanceof Error ? e.message : String(e));
+          }
+        })();
+      },
+    });
   };
 
   const onCreateTask = async (): Promise<void> => {
@@ -407,7 +417,7 @@ export default function Page() {
                     title="Delete project"
                     onClick={(e) => {
                       e.stopPropagation();
-                      void onDeleteProject(p);
+                      onDeleteProject(p);
                     }}
                   >
                     ✕
@@ -648,6 +658,16 @@ export default function Page() {
 
       <CommandPalette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <ConfirmDialog
+        open={confirmReq !== null}
+        message={confirmReq?.message ?? ""}
+        confirmLabel="Delete"
+        onConfirm={() => {
+          confirmReq?.run();
+          setConfirmReq(null);
+        }}
+        onCancel={() => setConfirmReq(null)}
+      />
       <ConfigPanel
         open={configOpen}
         tab={configTab}

@@ -29,6 +29,8 @@
   --s-3: 12px;
   --s-4: 16px;
   --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
 }
 
 * {
@@ -407,6 +409,39 @@ input {
   height: 100%;
   min-height: 0;
   padding: var(--s-2);
+}
+
+/* ---- Confirm dialog (destructive actions) ---- */
+.confirm {
+  width: 400px;
+  max-width: calc(100vw - var(--s-6));
+  background: var(--bg-2);
+  border: 1px solid var(--border-3);
+  border-radius: 8px;
+  padding: var(--s-4);
+}
+
+.confirm-msg {
+  font-size: 13px;
+  color: var(--fg-0);
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+}
+
+.confirm-danger {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.confirm-danger:hover {
+  background: var(--error);
+  color: var(--bg-0);
 }
 
 /* Slim strip under the header for an ended session: explains the frozen pane
