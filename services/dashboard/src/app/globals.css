@@ -772,7 +772,9 @@ select {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Columns shrink to keep all four stages visible beside the right panel;
+     below 160px each the board scrolls instead of clipping the Done column. */
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
   gap: var(--s-2);
   padding: var(--s-3);
   overflow-x: auto;
@@ -781,7 +783,7 @@ select {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  min-width: 200px;
+  min-width: 0;
   background: var(--bg-1);
   border: 1px solid var(--border-1);
   border-radius: 6px;
