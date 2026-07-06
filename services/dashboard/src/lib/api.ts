@@ -265,6 +265,18 @@ export async function sendInput(id: string, data: string): Promise<{ bytes: numb
 
 export const runWorkspace = (id: string) => post(id, "run");
 export const mergeWorkspace = (id: string) => post(id, "merge");
+// Fork: new worktree + branch off this workspace's branch tip (committed work
+// only), same base branch, fresh session. Returns the new workspace.
+export async function forkWorkspace(id: string, name?: string): Promise<Workspace> {
+  const r = await fetch(`${SUPERVISOR_URL}/workspaces/${id}/fork`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(name ? { name } : {}),
+  });
+  const body = (await r.json().catch(() => ({}))) as Workspace & { message?: string };
+  if (!r.ok) throw new Error(body.message ?? `fork ${r.status}`);
+  return body;
+}
 export const keepWorkspace = (id: string) => post(id, "keep");
 // Pull base into the worktree; resolves/avoids conflicts before a merge.
 export const syncWorkspace = (id: string) => post(id, "sync");

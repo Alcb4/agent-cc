@@ -22,6 +22,7 @@ import {
   listWorkspaces,
   createWorkspace,
   runWorkspace,
+  forkWorkspace,
   mergeWorkspace,
   keepWorkspace,
   discardWorkspace,
@@ -170,6 +171,19 @@ export default function Page() {
       await refresh();
       setTab("projects");
       setSelectedProjectId(p.id);
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  // Fork the focused task from its last commit and jump to the new session.
+  const onFork = async (w: Workspace): Promise<void> => {
+    try {
+      const forked = await forkWorkspace(w.id);
+      await refresh();
+      setActiveId(forked.id);
+      setAllFocus(true);
+      setToast(`Forked into "${forked.name}"`);
     } catch (e) {
       setToast(e instanceof Error ? e.message : String(e));
     }
@@ -619,6 +633,14 @@ export default function Page() {
                   ) : null}
                 </span>
                 <div className="term-actions">
+                  {active.stage !== "done" && (
+                    <button
+                      onClick={() => void onFork(active)}
+                      title="New task branched from this one's last commit (uncommitted changes stay here)"
+                    >
+                      Fork
+                    </button>
+                  )}
                   {active.stage === "done" ? (
                     <span className="micro">done</span>
                   ) : active.prUrl ? (

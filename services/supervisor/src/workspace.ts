@@ -253,6 +253,63 @@ export class WorkspaceManager {
     return ok(workspace);
   }
 
+  // Fork an existing workspace: a new worktree + branch cut from the SOURCE
+  // workspace's branch tip, sharing the source's base branch (both can merge
+  // into the same base independently — "try a different approach from here").
+  // Only committed work carries over; uncommitted changes stay in the source
+  // worktree, so forking a live session is safe and never blocks on dirty.
+  // The fork inherits project, model, command, cwd, and persona, and starts
+  // its own fresh session.
+  async fork(sourceId: string, name?: string): Promise<Result<Workspace>> {
+    const src = this.get(sourceId);
+    if (!src) return err(appError("workspace.not_found", "not found"));
+
+    const id = randomUUID();
+    const forkName = name?.trim() || `${src.name} fork`;
+    const wt = await this.worktrees.create(src.repoRoot, forkName, id, src.baseBranch, src.branch);
+    if (!wt.ok) return wt;
+
+    const cwd = resolve(wt.value.worktreePath, src.cwdSubpath ?? "");
+    const cols = 120;
+    const rows = 32;
+    const ts = nowIso();
+
+    const tmux = new TmuxSession(this.cfg, `agentcc-${id}`);
+    const started = tmux.start({ cwd, cols, rows, command: src.command });
+    if (!started.ok) {
+      await this.worktrees.discard(src.repoRoot, wt.value); // best-effort rollback
+      return started;
+    }
+
+    const workspace: Workspace = {
+      id,
+      projectId: src.projectId,
+      name: forkName,
+      repoRoot: src.repoRoot,
+      model: src.model,
+      cwdSubpath: src.cwdSubpath ?? "",
+      branch: wt.value.branch,
+      baseBranch: wt.value.baseBranch,
+      worktreePath: wt.value.worktreePath,
+      tmuxSessionName: `agentcc-${id}`,
+      command: src.command,
+      status: "running",
+      stage: "active",
+      prUrl: null,
+      personaId: src.personaId,
+      createdAt: ts,
+      updatedAt: ts,
+    };
+
+    insertWorkspace(this.db, workspace);
+    this.wire(workspace.id, tmux);
+    this.log.info(
+      { workspaceId: id, sourceId, name: forkName, branch: workspace.branch, fromRef: src.branch },
+      "workspace forked",
+    );
+    return ok(workspace);
+  }
+
   // Start a fresh session in an existing (ended/kept) workspace. Refuses on a
   // dirty worktree — never auto-stash. `allowDirty` is the deliberate exception
   // for conflict resolution: after a Sync-from-base conflict the worktree is

@@ -265,6 +265,20 @@ export async function buildApi(deps: ApiDeps) {
     },
   );
 
+  // Fork: new worktree + branch cut from this workspace's branch tip, same
+  // base branch, fresh session. Committed work only.
+  app.post<{ Params: { id: string }; Body: { name?: string } | null }>(
+    "/workspaces/:id/fork",
+    async (req, reply) => {
+      const r = await deps.workspaces.fork(req.params.id, req.body?.name);
+      if (!r.ok) {
+        const code = r.error.code === "workspace.not_found" ? 404 : 500;
+        return reply.code(code).send(r.error);
+      }
+      return reply.code(201).send(r.value);
+    },
+  );
+
   // Start a new session in an existing worktree (refuses on dirty).
   app.post<{ Params: { id: string } }>("/workspaces/:id/run", async (req, reply) => {
     const r = await deps.workspaces.run(req.params.id);

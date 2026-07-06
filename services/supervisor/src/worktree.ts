@@ -120,20 +120,24 @@ export class WorktreeManager {
     return ok(entries);
   }
 
-  // Create the isolated worktree + branch off the base branch tip. The display
-  // name is slugified for the branch segment (git branch names can't contain
-  // spaces or many punctuation chars) — the original name stays on the workspace.
+  // Create the isolated worktree + branch. The display name is slugified for
+  // the branch segment (git branch names can't contain spaces or many
+  // punctuation chars) — the original name stays on the workspace. By default
+  // the branch starts at the base branch tip; a fork passes the source
+  // workspace's branch as `fromRef` while keeping the original base (so the
+  // fork still merges into the same base as its source).
   async create(
     repoRoot: string,
     name: string,
     workspaceId: string,
     baseBranch: string,
+    fromRef: string = baseBranch,
   ): Promise<Result<WorktreeInfo>> {
     const branch = `workspace/${branchSlug(name)}/${workspaceId}`;
     const worktreePath = join(repoRoot, ".worktrees", workspaceId);
     const git = simpleGit(repoRoot);
     try {
-      await git.raw(["worktree", "add", "-b", branch, worktreePath, baseBranch]);
+      await git.raw(["worktree", "add", "-b", branch, worktreePath, fromRef]);
     } catch (e) {
       return err(appError("internal", `git worktree add failed: ${(e as Error).message}`));
     }
