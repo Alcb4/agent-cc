@@ -75,6 +75,13 @@ button:hover {
   color: var(--fg-0);
 }
 
+/* Keyboard focus ring (DESIGN.md: focus rings use --fg-0). The browser default
+   outline is near-invisible on the dark surfaces. */
+:focus-visible {
+  outline: 1px solid var(--fg-0);
+  outline-offset: 1px;
+}
+
 button.primary {
   color: var(--bg-0);
   background: var(--fg-0);
