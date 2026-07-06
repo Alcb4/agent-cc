@@ -4,7 +4,38 @@ import {
   redactUrlCredentials,
   stripAdversarial,
   sanitizeForLlm,
+  stripControlSequences,
 } from "./redaction.js";
+
+describe("stripControlSequences", () => {
+  test("strips SGR color codes", () => {
+    expect(stripControlSequences("\x1b[2mResume this session\x1b[22m")).toBe(
+      "Resume this session",
+    );
+  });
+
+  test("strips cursor movement and private-mode sequences from a tmux capture", () => {
+    const raw = "\x1b[7C\x1b[45A\x1b[?25h\x1b[?2026l\x1b[?1006l\x1b[?1003lRun ended";
+    expect(stripControlSequences(raw)).toBe("Run ended");
+  });
+
+  test("strips CSI sequences with <=> private parameter markers", () => {
+    // xterm modifyOtherKeys reset and kitty keyboard-protocol pop
+    expect(stripControlSequences("\x1b[>4m\x1b[<uResume")).toBe("Resume");
+  });
+
+  test("strips OSC titles and lone escapes, keeps tabs and newlines", () => {
+    expect(stripControlSequences("\x1b]0;title\x07a\tb\nc\x1b(B")).toBe("a\tb\nc");
+  });
+
+  test("removes carriage returns and stray control chars", () => {
+    expect(stripControlSequences("line1\r\nline2\x08\x00")).toBe("line1\nline2");
+  });
+
+  test("leaves plain text untouched", () => {
+    expect(stripControlSequences("claude --resume 3ea92d7f")).toBe("claude --resume 3ea92d7f");
+  });
+});
 
 describe("redactSecrets", () => {
   test("redacts standalone token shapes", () => {

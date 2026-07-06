@@ -9,6 +9,7 @@ import {
   redactSecrets,
   redactUrlCredentials,
   sanitizeForLlm,
+  stripControlSequences,
 } from "@agent-cc/shared";
 import {
   type DB,
@@ -79,7 +80,9 @@ export function writeRun(
   // store (raw pane output routinely contains printed env vars, tokens, and git
   // remote URLs with embedded creds). Everything downstream — finalPaneState,
   // the summary, and any future re-injection — is derived from the clean text.
-  const clean = redactUrlCredentials(redactSecrets(runOutput));
+  // Escape sequences are stripped FIRST so SGR codes can't split a credential
+  // and defeat the redaction patterns.
+  const clean = redactUrlCredentials(redactSecrets(stripControlSequences(runOutput)));
   const summary = summarize(clean, exitCode);
   const ts = nowIso();
 

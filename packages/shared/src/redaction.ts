@@ -55,6 +55,24 @@ export function redactUrlCredentials(text: string): string {
   });
 }
 
+// Terminal escape sequences: CSI (colors, cursor movement, private modes like
+// [?2026l), OSC (titles, hyperlinks), DCS/SOS/PM/APC strings, and lone ESC+char.
+const ansiSequence =
+  // eslint-disable-next-line no-control-regex
+  /\x1b(?:\[[0-9;:<=>?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)?|[PX^_][^\x1b]*(?:\x1b\\)?|[ -/]*[0-~])/g;
+// Remaining C0 control chars except tab/newline (carriage returns collapse away).
+// eslint-disable-next-line no-control-regex
+const controlChars = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g;
+
+/**
+ * Strip terminal escape sequences and control characters from captured pane
+ * output. Raw tmux captures are full of SGR/cursor/mode sequences that render
+ * as garbage anywhere outside a terminal (memory summaries, injected context).
+ */
+export function stripControlSequences(text: string): string {
+  return text.replace(ansiSequence, "").replace(controlChars, "").replace(/\r/g, "");
+}
+
 /**
  * Neuter common prompt-injection delimiters so text lifted from a transcript or
  * a tool result cannot escape the surrounding instructions. This is a stop-gap,
