@@ -4,6 +4,8 @@ Local-first agent command centre. One browser tab where you watch every coding
 agent running across every project, take over any of them mid-run, and inject
 curated context into a fresh agent session with one click.
 
+![The agent-cc dashboard: a live agent session streaming in the centre panel, projects and tasks on the left, memory and decisions on the right.](docs/media/dashboard.jpg)
+
 This is a monorepo of services fronted by a single public API on the supervisor.
 Everything runs on your machine — see [Security & privacy](#security--privacy).
 

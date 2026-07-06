@@ -11,6 +11,9 @@ coverage/
 *.db-wal
 .agent_cc/
 
+# Agent worktrees (live per-task checkouts created by the supervisor)
+.worktrees/
+
 # Secrets / key material (defense in depth — these live in ~/.agent_cc, not here)
 *.key
 *.pem
