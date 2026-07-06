@@ -37,3 +37,4 @@ tests/e2e/fixture.json
 
 # Test scratch
 /tmp-test/
+.gstack/
