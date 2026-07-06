@@ -1297,23 +1297,66 @@ select {
 }
 
 /* ---- Responsive: collapse rails on narrow / mobile viewports (N6) ---- */
-@media (max-width: 900px) {
+/* Responsive per DESIGN.md: below 1024px the right panel becomes a toggleable
+   overlay (topbar button / Cmd-K "right panel"); below 768px the dashboard
+   shows a best-on-a-larger-screen note. */
+.right-toggle {
+  display: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.mobile-note {
+  display: none;
+}
+
+@media (max-width: 1024px) {
   .panels {
     grid-template-columns: 200px 1fr;
   }
   .panels .right {
     display: none;
   }
-}
-
-@media (max-width: 640px) {
-  .panels {
-    grid-template-columns: 1fr;
+  .panels .right.right-open {
+    display: block;
+    position: fixed;
+    top: 36px;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    z-index: 30;
+    border-left: 1px solid var(--border-2);
+    background: var(--bg-1);
   }
-  .panels .left {
-    display: none;
+  .right-toggle {
+    display: inline-flex;
   }
   .watch-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .panels {
+    display: none;
+  }
+  /* keep the topbar to brand + theme toggle; the meta line and panel
+     toggle have nothing to describe here */
+  .topbar-right .micro,
+  .right-toggle {
+    display: none;
+  }
+  .mobile-note {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    padding: var(--s-5);
+    text-align: center;
+    color: var(--fg-1);
   }
 }

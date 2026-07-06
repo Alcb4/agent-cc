@@ -197,6 +197,10 @@ export default function Page() {
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
   }, []);
+  // Below 1024px the right panel is an overlay; this drives it (topbar
+  // button + Cmd-K). No effect at desktop widths where the panel is fixed.
+  const [rightOpen, setRightOpen] = useState(false);
+
   const toggleTheme = useCallback(() => {
     setTheme((t) => {
       const next = t === "dark" ? "light" : "dark";
@@ -330,6 +334,12 @@ export default function Page() {
       },
       { id: "help", label: "Keyboard help", run: () => setHelpOpen(true) },
       { id: "theme", label: "Toggle theme", hint: theme === "dark" ? "light" : "dark", run: toggleTheme },
+      {
+        id: "right",
+        label: "Toggle right panel",
+        hint: "narrow screens",
+        run: () => setRightOpen((o) => !o),
+      },
     ];
     for (const w of workspaces) {
       cmds.push({
@@ -367,6 +377,13 @@ export default function Page() {
             {runningTotal} running · ⌘K
             {toast ? ` · ${toast}` : ""}
           </span>
+          <button
+            className="right-toggle"
+            onClick={() => setRightOpen((o) => !o)}
+            title="Toggle the memory panel (narrow screens)"
+          >
+            panel
+          </button>
           <button
             className="theme-toggle"
             onClick={toggleTheme}
@@ -655,7 +672,7 @@ export default function Page() {
           )}
         </main>
 
-        <aside className="right" aria-label="Memory and runs">
+        <aside className={`right${rightOpen ? " right-open" : ""}`} aria-label="Memory and runs">
           {(tab === "all" || tab === "board") && !allFocus ? (
             <>
               <div className="panel-head">
@@ -684,6 +701,12 @@ export default function Page() {
             </>
           )}
         </aside>
+      </div>
+
+      {/* Shown by CSS only below 768px, where the three-pane layout can't work. */}
+      <div className="mobile-note">
+        <span>agent-cc is best on a larger screen.</span>
+        <span className="micro">the three-pane dashboard needs ~768px or more</span>
       </div>
 
       <CommandPalette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
