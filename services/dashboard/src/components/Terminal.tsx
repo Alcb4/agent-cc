@@ -43,7 +43,21 @@ export function Terminal({
       const term = new XTerm({
         fontFamily: '"JetBrains Mono", monospace',
         fontSize,
-        theme: { background: "#0a0a0a", foreground: "#ededed" },
+        // DESIGN.md locks the agent ANSI palette to the status tokens so
+        // agent-output green matches the chrome's running-green (xterm's
+        // defaults diverge, e.g. green #0dbc79).
+        theme: {
+          background: "#0a0a0a",
+          foreground: "#ededed",
+          black: "#1a1a1a",
+          red: "#f87171",
+          green: "#4ade80",
+          yellow: "#fbbf24",
+          blue: "#60a5fa",
+          magenta: "#c084fc",
+          cyan: "#22d3ee",
+          white: "#ededed",
+        },
         cursorBlink: !readOnly,
         disableStdin: readOnly,
         scrollback: readOnly ? 1000 : 5000,
@@ -109,7 +123,8 @@ export function Terminal({
 
   return (
     <div className="term-wrap">
-      <div className="term-host" ref={hostRef} />
+      {/* aria-live per DESIGN.md so screen readers announce new output */}
+      <div className="term-host" ref={hostRef} aria-live="polite" />
       {connecting && (
         <div className="term-overlay">
           <span className="micro">Connecting to session…</span>
