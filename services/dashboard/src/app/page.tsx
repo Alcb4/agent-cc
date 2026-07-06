@@ -522,14 +522,17 @@ export default function Page() {
           ) : active ? (
             <>
               <div className="term-head">
-                <span>
+                <span className="term-id">
                   {(tab === "all" || tab === "board") && (
                     <button className="back-grid" onClick={() => setAllFocus(false)}>
                       ← {tab === "board" ? "Board" : "Watch all"}
                     </button>
                   )}
-                  {active.name} · <span style={{ color: "var(--fg-2)" }}>{active.branch}</span> ·{" "}
-                  <span className={`pill ${active.status}`}>{active.status}</span>
+                  {active.name} ·{" "}
+                  <span className="term-branch" title={active.branch}>
+                    {active.branch}
+                  </span>{" "}
+                  · <span className={`pill ${active.status}`}>{active.status}</span>
                   {activity[active.id]?.live ? (
                     <span className={`act act-${activity[active.id]!.state}`}>
                       {activityLabel(activity[active.id]!.state)}
