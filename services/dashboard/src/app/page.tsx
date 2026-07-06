@@ -60,6 +60,8 @@ export default function Page() {
   const [pName, setPName] = useState("");
   const [pRepo, setPRepo] = useState("");
   const [pModel, setPModel] = useState("");
+  // Collapsed by default: the rail's job is the project list, not the form.
+  const [showNewProject, setShowNewProject] = useState(false);
   const [tName, setTName] = useState("");
   const [tCmd, setTCmd] = useState("claude"); // default agent: Claude Code (subscription)
   const [tCustom, setTCustom] = useState(false);
@@ -161,6 +163,7 @@ export default function Page() {
       setPName("");
       setPRepo("");
       setPModel("");
+      setShowNewProject(false);
       await refresh();
       setTab("projects");
       setSelectedProjectId(p.id);
@@ -354,15 +357,27 @@ export default function Page() {
 
           {tab === "projects" && (
             <>
-              <div className="stack">
-                <span className="micro">New project</span>
-                <input placeholder="name" value={pName} onChange={(e) => setPName(e.target.value)} />
-                <ProjectRootPicker value={pRepo} onChange={setPRepo} onToast={setToast} />
-                <ModelSelect value={pModel} onChange={setPModel} allowEmpty placeholder="default model (optional)" />
-                <button className="primary" onClick={() => void onCreateProject()}>
-                  + New project
-                </button>
-              </div>
+              {showNewProject || projects.length === 0 ? (
+                <div className="stack">
+                  <span className="micro">New project</span>
+                  <input placeholder="name" value={pName} onChange={(e) => setPName(e.target.value)} />
+                  <ProjectRootPicker value={pRepo} onChange={setPRepo} onToast={setToast} />
+                  <ModelSelect value={pModel} onChange={setPModel} allowEmpty placeholder="default model (optional)" />
+                  <button className="primary" onClick={() => void onCreateProject()}>
+                    + New project
+                  </button>
+                  {projects.length > 0 && (
+                    <button onClick={() => setShowNewProject(false)}>Cancel</button>
+                  )}
+                </div>
+              ) : (
+                <div className="panel-head">
+                  <span className="micro">Projects</span>
+                  <button className="proj-add" onClick={() => setShowNewProject(true)}>
+                    + New
+                  </button>
+                </div>
+              )}
 
               {projects.map((p) => (
                 <div
