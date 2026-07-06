@@ -4,7 +4,14 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openDb, insertItem, type DB } from "./db.js";
-import { copyWorkspaceMemory, getContext, upgradeRunSummary, writeRun } from "./memory.js";
+import {
+  copyWorkspaceMemory,
+  getContext,
+  projectMemoryId,
+  rollUpToProject,
+  upgradeRunSummary,
+  writeRun,
+} from "./memory.js";
 import { buildPrompt, modelSummarize } from "./summarizer.js";
 
 const WS = "ws-test";
@@ -130,5 +137,29 @@ describe("memory redaction wiring", () => {
     expect(prompt.length).toBeLessThan(10_000);
     expect(prompt).toContain("THE_END");
     expect(prompt).not.toContain("<system>");
+  });
+
+  test("rollUpToProject preserves a task's memory under the project, tagged and deduped", () => {
+    insertItem(db, {
+      id: randomUUID(),
+      workspaceId: WS,
+      type: "decision",
+      body: "we chose sqlite",
+      tags: [],
+      createdAt: new Date().toISOString(),
+    });
+    writeRun(db, WS, "shipped the feature\nDone.", 0);
+
+    const proj = projectMemoryId("proj-1");
+    // A removed task's value survives in the project namespace...
+    expect(rollUpToProject(db, { workspaceId: WS, projectId: "proj-1", taskName: "ship-x" })).toBe(2);
+    const pack = getContext(db, proj, "");
+    expect(pack.recentDecisions.map((i) => i.body)).toContain("we chose sqlite");
+    expect(pack.recentRuns.length).toBe(1);
+    // ...tagged with its source task for provenance...
+    expect(pack.recentDecisions[0]!.tags).toContain("task:ship-x");
+    // ...and rolling the same task up again is a no-op (deduped by body).
+    expect(rollUpToProject(db, { workspaceId: WS, projectId: "proj-1", taskName: "ship-x" })).toBe(0);
+    expect(getContext(db, proj, "").recentDecisions.length).toBe(1);
   });
 });

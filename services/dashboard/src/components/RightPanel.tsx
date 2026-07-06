@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ContextPack, MemoryItem, QueueItem, Schedule } from "@agent-cc/shared";
 import {
   getContext,
+  getProjectContext,
   injectContext,
   listQueue,
   enqueueCommand,
@@ -82,33 +83,136 @@ export function RightPanel({
   );
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  decision: "Decision",
+  gotcha: "Gotcha",
+  recent_run_summary: "Run",
+  project_overlay: "Overlay",
+  persona: "Persona",
+};
+
+// Human-readable "3m ago" / "2h ago" / "5d ago" from an ISO timestamp.
+function relTime(iso: string): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 45) return "just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+
+// A run summary opens with "Run ended (exit N).": surface that as a done/failed
+// chip so the outcome reads at a glance instead of hiding in the prose.
+function runOutcome(item: MemoryItem): "ok" | "fail" | null {
+  if (item.type !== "recent_run_summary") return null;
+  const m = /exit (\d+|unknown)/i.exec(item.body);
+  if (!m || m[1] === "unknown") return null;
+  return m[1] === "0" ? "ok" : "fail";
+}
+
+// Rolled-up items carry a `task:<name>` tag; show which task the value came from.
+function taskProvenance(item: MemoryItem): string | null {
+  const t = item.tags.find((x) => x.startsWith("task:"));
+  return t ? t.slice("task:".length) : null;
+}
+
 function Row({ item }: { item: MemoryItem }) {
+  const outcome = runOutcome(item);
+  const from = taskProvenance(item);
   return (
     <div className="mem-row">
-      <div className="mem-type">{item.type.replace(/_/g, " ")}</div>
+      <div className="mem-head">
+        <span className={`mem-type mt-${item.type}`}>
+          {TYPE_LABEL[item.type] ?? item.type.replace(/_/g, " ")}
+        </span>
+        {outcome && (
+          <span className={`mem-outcome mo-${outcome}`}>{outcome === "ok" ? "done" : "failed"}</span>
+        )}
+        {from && (
+          <span className="mem-from" title={`from task “${from}”`}>
+            {from}
+          </span>
+        )}
+        <span className="mem-time" title={item.createdAt}>
+          {relTime(item.createdAt)}
+        </span>
+      </div>
       <div className="mem-body">{item.body}</div>
     </div>
   );
 }
 
-function MemoryList({ pack }: { pack: ContextPack }) {
-  const rows = [...pack.gotchas, ...pack.recentDecisions, ...pack.recentRuns];
-  if (rows.length === 0) {
-    return <div className="empty">No memory yet. Run a session; its summary appears here.</div>;
-  }
+function Section({ title, items }: { title: string; items: MemoryItem[] }) {
+  if (items.length === 0) return null;
   return (
-    <div>
-      {rows.map((i) => (
+    <div className="mem-section">
+      <div className="mem-section-head">{title}</div>
+      {items.map((i) => (
         <Row key={i.id} item={i} />
       ))}
     </div>
   );
 }
 
+function MemoryList({ pack }: { pack: ContextPack }) {
+  const total = pack.recentDecisions.length + pack.gotchas.length + pack.recentRuns.length;
+  if (total === 0) {
+    return <div className="empty">No memory yet. Run a session; its summary appears here.</div>;
+  }
+  return (
+    <div className="mem-list">
+      <Section title="Decisions" items={pack.recentDecisions} />
+      <Section title="Gotchas" items={pack.gotchas} />
+      <Section title="Runs" items={pack.recentRuns} />
+    </div>
+  );
+}
+
+// The project's rolled-up memory: value carried over from its removed tasks.
+// Read-only — shown in the right panel when a project is selected with no task.
+export function ProjectMemory({
+  projectId,
+  projectName,
+  refreshKey,
+}: {
+  projectId: string;
+  projectName: string;
+  refreshKey: number;
+}) {
+  const [pack, setPack] = useState<ContextPack | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setError(null);
+    getProjectContext(projectId)
+      .then((p) => active && setPack(p))
+      .catch((e) => active && setError(String(e)));
+    return () => {
+      active = false;
+    };
+  }, [projectId, refreshKey]);
+
+  return (
+    <>
+      <div className="panel-head">
+        <h2 className="micro">Project memory · {projectName}</h2>
+      </div>
+      <div className="mem-note micro">What ended tasks in this project left behind. Removing a task rolls its value up here.</div>
+      {error && <div className="empty">memory unavailable: {error}</div>}
+      {!error && !pack && <div className="empty">loading…</div>}
+      {!error && pack && <MemoryList pack={pack} />}
+    </>
+  );
+}
+
 function RunsList({ items }: { items: MemoryItem[] }) {
   if (items.length === 0) return <div className="empty">No runs yet.</div>;
   return (
-    <div>
+    <div className="mem-list">
       {items.map((i) => (
         <Row key={i.id} item={i} />
       ))}

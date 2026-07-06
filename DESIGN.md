@@ -77,6 +77,7 @@
 | 2026-07-06 | One `--control-h: 28px` token for every interactive control | The 28px minimum was enforced by 14 scattered literals; one token ends the drift. |
 | 2026-07-06 | Queued = hollow-ring dot (`--fg-2`); starting = `--running` dot breathing at 1.2s (static 70% under reduced motion) | Queued work exists but hasn't been given life (empty ring); starting is alive but not yet producing (running colour, breathing). Queue rows share the same dot language as pills. |
 | 2026-07-06 | Multi-tab on one workspace: mirror output to every view, input/resize last-writer-wins, `⧉ N` presence badge on the focused pane when N>1 | Matches tmux's own multi-client semantics — no dead-control states to explain; the honest fix is making the sharing visible, not arbitrating it. |
+| 2026-07-07 | An ended task carries a `✕` remove; removing it first rolls its memory (decisions/gotchas/run summaries) up to a project-level memory view (shown in the right panel when a project is selected, no task focused) | A task tile is disposable once its value is captured; the compounding memory is the asset, so removal must preserve it, not discard it. The `✕` is hidden on running tasks (end first). |
 
 ## Anti-Patterns (rejected explicitly)
 - **Purple / blue gradients** as accents or backgrounds. Ever.

@@ -3,7 +3,14 @@
 import Fastify from "fastify";
 import type { Logger } from "pino";
 import type { DB } from "./db.js";
-import { copyWorkspaceMemory, getContext, upgradeRunSummary, writeRun } from "./memory.js";
+import {
+  copyWorkspaceMemory,
+  getContext,
+  projectMemoryId,
+  rollUpToProject,
+  upgradeRunSummary,
+  writeRun,
+} from "./memory.js";
 
 export function buildApi(db: DB, log: Logger) {
   const app = Fastify({ loggerInstance: log });
@@ -48,6 +55,35 @@ export function buildApi(db: DB, log: Logger) {
         .send({ code: "bad_request", message: "sourceWorkspaceId and targetWorkspaceId required" });
     }
     const copied = copyWorkspaceMemory(db, body.sourceWorkspaceId, body.targetWorkspaceId);
+    return reply.code(201).send({ copied });
+  });
+
+  // The project's rolled-up memory (the union of its removed tasks' value).
+  // Same ContextPack shape as a workspace, over the project memory namespace.
+  app.post("/memory/project-context", async (req, reply) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (typeof body.projectId !== "string") {
+      return reply.code(400).send({ code: "bad_request", message: "projectId required" });
+    }
+    const taskHint = typeof body.taskHint === "string" ? body.taskHint : "";
+    return getContext(db, projectMemoryId(body.projectId), taskHint);
+  });
+
+  // Roll a task's memory up to its project's memory namespace, so its value
+  // survives after the task is removed. Idempotent (deduped by body).
+  app.post("/memory/roll-up", async (req, reply) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (typeof body.workspaceId !== "string" || typeof body.projectId !== "string") {
+      return reply
+        .code(400)
+        .send({ code: "bad_request", message: "workspaceId and projectId required" });
+    }
+    const taskName = typeof body.taskName === "string" ? body.taskName : undefined;
+    const copied = rollUpToProject(db, {
+      workspaceId: body.workspaceId,
+      projectId: body.projectId,
+      taskName,
+    });
     return reply.code(201).send({ copied });
   });
 

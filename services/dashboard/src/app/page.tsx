@@ -5,7 +5,7 @@ import type { Workspace, ProjectSummary } from "@agent-cc/shared";
 import { Terminal } from "@/components/Terminal";
 import { WatchGrid } from "@/components/WatchGrid";
 import { StageBoard } from "@/components/StageBoard";
-import { RightPanel, type RightTab } from "@/components/RightPanel";
+import { RightPanel, ProjectMemory, type RightTab } from "@/components/RightPanel";
 import { CommandPalette, type Command } from "@/components/CommandPalette";
 import { HelpDrawer } from "@/components/HelpDrawer";
 import { ConfigPanel, type ConfigTab } from "@/components/ConfigPanel";
@@ -242,6 +242,26 @@ export default function Page() {
             await deleteProject(p.id, p.workspaceCount > 0);
             if (selectedProjectId === p.id) setSelectedProjectId(null);
             await refresh();
+            setRefreshKey((k) => k + 1);
+          } catch (e) {
+            setToast(e instanceof Error ? e.message : String(e));
+          }
+        })();
+      },
+    });
+  };
+
+  // Remove an ended task. Its memory rolls up to the project first (server-side),
+  // so the value survives; then the worktree + branch are discarded.
+  const onRemoveTask = (w: Workspace): void => {
+    setConfirmReq({
+      message: `Remove task “${w.name}”? Its memory rolls up to the project; the worktree + branch are discarded.`,
+      run: () => {
+        void (async () => {
+          try {
+            await discardWorkspace(w.id);
+            if (activeId === w.id) setActiveId(null);
+            await Promise.all([refresh(), loadWorkspaces(selectedProjectId, tab)]);
             setRefreshKey((k) => k + 1);
           } catch (e) {
             setToast(e instanceof Error ? e.message : String(e));
@@ -495,7 +515,13 @@ export default function Page() {
                     <h2 className="micro">Tasks · {selectedProject.name}</h2>
                   </div>
                   {workspaces.map((w) => (
-                    <WsCard key={w.id} w={w} active={w.id === activeId} onClick={() => setActiveId(w.id)} />
+                    <WsCard
+                      key={w.id}
+                      w={w}
+                      active={w.id === activeId}
+                      onClick={() => setActiveId(w.id)}
+                      onRemove={onRemoveTask}
+                    />
                   ))}
                   <div className="stack">
                     <input
@@ -565,6 +591,7 @@ export default function Page() {
                     setActiveId(w.id);
                     setAllFocus(true);
                   }}
+                  onRemove={onRemoveTask}
                 />
               ))}
             </>
@@ -717,12 +744,18 @@ export default function Page() {
               refreshKey={refreshKey}
               onToast={setToast}
             />
+          ) : selectedProject ? (
+            <ProjectMemory
+              projectId={selectedProject.id}
+              projectName={selectedProject.name}
+              refreshKey={refreshKey}
+            />
           ) : (
             <>
               <div className="panel-head">
                 <h2 className="micro">Memory + decisions</h2>
               </div>
-              <div className="empty">Once you have a task, its memory will appear here.</div>
+              <div className="empty">Select a project to see its memory, or focus a task.</div>
             </>
           )}
         </aside>
@@ -781,12 +814,38 @@ function fmtTokens(n: number): string {
   return String(n);
 }
 
-function WsCard({ w, active, onClick }: { w: Workspace; active: boolean; onClick: () => void }) {
+function WsCard({
+  w,
+  active,
+  onClick,
+  onRemove,
+}: {
+  w: Workspace;
+  active: boolean;
+  onClick: () => void;
+  onRemove?: (w: Workspace) => void;
+}) {
+  // An ended/errored task is terminal — safe to remove. A running task must be
+  // ended first, so it has no ✕ (matches the discard backend, which kills first).
+  const removable = w.status === "ended" || w.status === "error";
   return (
     <div className={`ws-card${active ? " active" : ""}`} {...clickableRow(onClick)}>
       <div className="ws-row">
         <span className={`pill ${w.status}`}>{w.status}</span>
-        <span>{w.name}</span>
+        <span className="ws-name">{w.name}</span>
+        {onRemove && removable && (
+          <button
+            className="ws-del"
+            title="Remove task (rolls its memory up to the project)"
+            aria-label={`Remove task ${w.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(w);
+            }}
+          >
+            ✕
+          </button>
+        )}
       </div>
       <div className="ws-branch">{w.branch}</div>
     </div>

@@ -9,7 +9,15 @@ import type { Logger } from "pino";
 import type { ClientMessage } from "@agent-cc/shared";
 import type { WorkspaceManager } from "./workspace.js";
 import type { ServiceMonitor } from "./services-monitor.js";
-import { getContext, bindPersona, composePersona, copyMemory, getUsageSummary } from "./clients.js";
+import {
+  getContext,
+  getProjectContext,
+  rollUpMemory,
+  bindPersona,
+  composePersona,
+  copyMemory,
+  getUsageSummary,
+} from "./clients.js";
 
 export interface ApiDeps {
   workspaces: WorkspaceManager;
@@ -309,6 +317,16 @@ export async function buildApi(deps: ApiDeps) {
   // Discard the worktree + branch. Requires confirm: true in the body.
   app.post<{ Params: { id: string } }>("/workspaces/:id/discard", async (req, reply) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
+    // Roll the task's memory up to its project first, so removing the task never
+    // throws away its value. Best-effort — a memory hiccup must not block removal.
+    const w = deps.workspaces.get(req.params.id);
+    if (body.confirm === true && w?.projectId) {
+      await rollUpMemory(deps.memoryBaseUrl, {
+        workspaceId: w.id,
+        projectId: w.projectId,
+        taskName: w.name,
+      });
+    }
     const r = await deps.workspaces.discard(req.params.id, body.confirm === true);
     if (!r.ok) {
       const code = r.error.code === "workspace.not_found" ? 404 : r.error.code === "bad_request" ? 400 : 500;
@@ -362,6 +380,16 @@ export async function buildApi(deps: ApiDeps) {
     "/workspaces/:id/context",
     async (req, reply) => {
       const pack = await getContext(deps.memoryBaseUrl, req.params.id, req.query.taskHint ?? "");
+      if (!pack.ok) return reply.code(502).send(pack.error);
+      return pack.value;
+    },
+  );
+
+  // A project's rolled-up memory — the value carried over from its removed tasks.
+  app.get<{ Params: { id: string }; Querystring: { taskHint?: string } }>(
+    "/projects/:id/context",
+    async (req, reply) => {
+      const pack = await getProjectContext(deps.memoryBaseUrl, req.params.id, req.query.taskHint ?? "");
       if (!pack.ok) return reply.code(502).send(pack.error);
       return pack.value;
     },

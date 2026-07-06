@@ -108,6 +108,52 @@ export async function copyMemory(
   }
 }
 
+// Roll a task's memory up to its project before the task is removed, so its
+// value survives the discard. Best-effort: removal proceeds even if this fails.
+export async function rollUpMemory(
+  memoryBaseUrl: string,
+  args: { workspaceId: string; projectId: string; taskName: string },
+): Promise<Result<{ copied: number }>> {
+  try {
+    const res = await fetch(`${memoryBaseUrl}/memory/roll-up`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) return err(appError("memory.write_failed", `memory roll-up ${res.status}`));
+    return ok((await res.json()) as { copied: number });
+  } catch (e) {
+    return err(
+      appError("service.unreachable", "memory service is down. Restart with: agent-cc start.", {
+        cause: (e as Error).message,
+      }),
+    );
+  }
+}
+
+// The project's rolled-up memory (value from its removed tasks).
+export async function getProjectContext(
+  memoryBaseUrl: string,
+  projectId: string,
+  taskHint: string,
+): Promise<Result<ContextPack>> {
+  try {
+    const res = await fetch(`${memoryBaseUrl}/memory/project-context`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ projectId, taskHint }),
+    });
+    if (!res.ok) return err(appError("service.unreachable", `memory project-context ${res.status}`));
+    return ok((await res.json()) as ContextPack);
+  } catch (e) {
+    return err(
+      appError("service.unreachable", "memory service is down. Restart with: agent-cc start.", {
+        cause: (e as Error).message,
+      }),
+    );
+  }
+}
+
 export async function writeRun(
   memoryBaseUrl: string,
   workspaceId: string,

@@ -560,9 +560,25 @@ button .pill {
 }
 
 /* ---- Memory rows (right panel) ---- */
+.mem-section-head {
+  padding: var(--s-3) var(--s-3) var(--s-1);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-2);
+}
+
 .mem-row {
   padding: var(--s-3);
   border-bottom: 1px solid var(--border-1);
+}
+
+/* header line: type chip · outcome · source task · time */
+.mem-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
 .mem-type {
@@ -573,6 +589,46 @@ button .pill {
   color: var(--fg-2);
 }
 
+/* done/failed chip on a run summary */
+.mem-outcome {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.mo-ok {
+  color: var(--running);
+}
+.mo-fail {
+  color: var(--error);
+}
+
+/* which task this rolled-up item came from */
+.mem-from {
+  font-size: 11px;
+  color: var(--fg-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+}
+
+.mem-time {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--fg-3);
+}
+
+.mem-note {
+  padding: var(--s-2) var(--s-3);
+  color: var(--fg-2);
+  border-bottom: 1px solid var(--border-1);
+}
+
 .mem-body {
   font-family: var(--mono);
   font-size: 12px;
@@ -580,6 +636,31 @@ button .pill {
   margin-top: var(--s-1);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* task remove — subtle ✕, reveals on card hover (mirrors project delete) */
+.ws-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-del {
+  flex: 0 0 auto;
+  height: var(--control-h);
+  padding: 0 6px;
+  font-size: 11px;
+  border: none;
+  color: var(--fg-3);
+  opacity: 0;
+}
+.ws-card:hover .ws-del,
+.ws-del:focus-visible {
+  opacity: 1;
+}
+.ws-del:hover {
+  color: var(--error);
+  background: transparent;
 }
 
 .empty {

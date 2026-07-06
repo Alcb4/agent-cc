@@ -213,6 +213,13 @@ export async function getContext(id: string, taskHint = ""): Promise<ContextPack
   return (await r.json()) as ContextPack;
 }
 
+// A project's rolled-up memory — value carried over from its removed tasks.
+export async function getProjectContext(projectId: string): Promise<ContextPack> {
+  const r = await fetch(`${SUPERVISOR_URL}/projects/${projectId}/context`);
+  if (!r.ok) throw new Error(`getProjectContext ${r.status}`);
+  return (await r.json()) as ContextPack;
+}
+
 export async function injectContext(id: string, taskHint = ""): Promise<{ bytes: number }> {
   const r = await fetch(`${SUPERVISOR_URL}/workspaces/${id}/inject-context`, {
     method: "POST",
