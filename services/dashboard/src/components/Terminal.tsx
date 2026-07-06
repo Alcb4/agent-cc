@@ -22,6 +22,8 @@ export function Terminal({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [connecting, setConnecting] = useState(true);
+  // Multi-tab: how many clients (tabs / grid panes) stream this workspace.
+  const [viewers, setViewers] = useState(1);
 
   // Hold the latest onEnded in a ref so the connect effect does NOT depend on
   // its identity — otherwise every parent re-render (e.g. the 2s activity poll)
@@ -91,6 +93,8 @@ export function Terminal({
         else if (msg.type === "session.ended") {
           term.write("\r\n\x1b[90m[session ended]\x1b[0m\r\n");
           onEndedRef.current();
+        } else if (msg.type === "presence") {
+          setViewers(msg.count);
         } else if (msg.type === "error") {
           term.write(`\r\n\x1b[31m[${msg.code}] ${msg.message}\x1b[0m\r\n`);
         }
@@ -141,6 +145,19 @@ export function Terminal({
   return (
     <div className="term-wrap">
       <div className="term-host" ref={hostRef} />
+      {/* Mirrored elsewhere (another tab, or a watch-grid pane): input and
+          resize are last-writer-wins, so say the pane is shared rather than
+          pretending this tab owns it. Focused pane only — the grid would show
+          one on every pane whenever a second view exists. */}
+      {!readOnlyRef.current && viewers > 1 && (
+        <span
+          className="presence-badge"
+          title="This session is streaming in other views (tabs or the watch grid). Keystrokes and resizes from any of them reach the same session."
+          aria-label={`mirrored in ${viewers} views`}
+        >
+          ⧉ {viewers}
+        </span>
+      )}
       {connecting && (
         <div className="term-overlay">
           <span className="micro">Connecting to session…</span>

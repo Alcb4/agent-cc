@@ -17,7 +17,10 @@ import {
   insertRun,
   recentByType,
   searchItems,
+  updateItemBody,
+  updateRunSummary,
 } from "./db.js";
+import { type CliRunner, cliRunner, modelSummarize } from "./summarizer.js";
 
 const TOP_K = 5;
 
@@ -82,7 +85,7 @@ export function writeRun(
   workspaceId: string,
   runOutput: string,
   exitCode: number | null,
-): MemoryItem {
+): { item: MemoryItem; runId: string; cleanOutput: string } {
   // Redact credentials at the ingestion boundary so secrets never enter the
   // store (raw pane output routinely contains printed env vars, tokens, and git
   // remote URLs with embedded creds). Everything downstream — finalPaneState,
@@ -92,9 +95,10 @@ export function writeRun(
   const clean = redactUrlCredentials(redactSecrets(stripControlSequences(runOutput)));
   const summary = summarize(clean, exitCode);
   const ts = nowIso();
+  const runId = randomUUID();
 
   insertRun(db, {
-    id: randomUUID(),
+    id: runId,
     workspaceId,
     exitCode,
     finalPaneState: clean,
@@ -111,7 +115,22 @@ export function writeRun(
     createdAt: ts,
   };
   insertItem(db, item);
-  return item;
+  return { item, runId, cleanOutput: clean };
+}
+
+// Background half of writeRun: ask the model (headless `claude -p` on the
+// user's OAuth login) for a better summary and swap it in over the heuristic.
+// Best-effort by design — on any failure the heuristic simply stands.
+export async function upgradeRunSummary(
+  db: DB,
+  args: { runId: string; itemId: string; cleanOutput: string; exitCode: number | null },
+  runner: CliRunner = cliRunner,
+): Promise<string | null> {
+  const upgraded = await modelSummarize(args.cleanOutput, args.exitCode, runner);
+  if (!upgraded) return null;
+  updateRunSummary(db, args.runId, upgraded);
+  updateItemBody(db, args.itemId, upgraded);
+  return upgraded;
 }
 
 // Seed a forked workspace's memory from its source: copy every memory item

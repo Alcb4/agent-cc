@@ -177,6 +177,10 @@ export type ServerMessage =
   | { type: "worktree.orphaned"; workspaceId: string }
   // N4: the workspace's command queue changed (item enqueued / advanced / done).
   | { type: "queue.updated"; workspaceId: string }
+  // Multi-tab policy: how many clients are streaming this workspace right now.
+  // Output mirrors to all of them; input/resize are last-writer-wins (tmux
+  // semantics), so the UI surfaces the mirroring instead of arbitrating it.
+  | { type: "presence"; workspaceId: string; count: number }
   | { type: "error"; code: string; message: string };
 
 // N4 command queue: an ordered list of commands run sequentially in a

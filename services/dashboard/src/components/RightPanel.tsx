@@ -175,7 +175,9 @@ function Queue({
       {items.length === 0 && <div className="empty">Queue is empty.</div>}
       {items.map((it) => (
         <div key={it.id} className="q-row">
-          <span className={`q-status q-${it.status}`}>{it.status}</span>
+          <span className={`q-status q-${it.status}`}>
+            {it.status === "pending" ? "queued" : it.status}
+          </span>
           <span className="q-cmd mono" title={it.command}>
             {it.command}
           </span>

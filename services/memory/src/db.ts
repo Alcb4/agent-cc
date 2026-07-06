@@ -63,6 +63,16 @@ export function insertRun(
   ).run(run);
 }
 
+// Background summary upgrade: replace the heuristic summary once the model
+// path succeeds. The FTS update trigger keeps memory_items_fts in sync.
+export function updateRunSummary(db: DB, runId: string, summary: string): void {
+  db.prepare(`UPDATE memory_runs SET summary = ? WHERE id = ?`).run(summary, runId);
+}
+
+export function updateItemBody(db: DB, itemId: string, body: string): void {
+  db.prepare(`UPDATE memory_items SET body = ? WHERE id = ?`).run(body, itemId);
+}
+
 export function recentByType(
   db: DB,
   workspaceId: string,

@@ -3,7 +3,7 @@
 import Fastify from "fastify";
 import type { Logger } from "pino";
 import type { DB } from "./db.js";
-import { copyWorkspaceMemory, getContext, writeRun } from "./memory.js";
+import { copyWorkspaceMemory, getContext, upgradeRunSummary, writeRun } from "./memory.js";
 
 export function buildApi(db: DB, log: Logger) {
   const app = Fastify({ loggerInstance: log });
@@ -27,7 +27,14 @@ export function buildApi(db: DB, log: Logger) {
         .send({ code: "bad_request", message: "workspaceId and runOutput required" });
     }
     const exitCode = typeof body.exitCode === "number" ? body.exitCode : null;
-    const item = writeRun(db, body.workspaceId, body.runOutput, exitCode);
+    const { item, runId, cleanOutput } = writeRun(db, body.workspaceId, body.runOutput, exitCode);
+    // Upgrade to a model summary in the background; the response never waits
+    // on the CLI and a failure leaves the heuristic in place.
+    void upgradeRunSummary(db, { runId, itemId: item.id, cleanOutput, exitCode })
+      .then((upgraded) => {
+        if (upgraded) log.info({ runId }, "run summary upgraded by model");
+      })
+      .catch((e: unknown) => log.warn({ runId, err: e }, "model summary upgrade failed"));
     return reply.code(201).send(item);
   });
 

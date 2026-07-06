@@ -409,6 +409,54 @@ input {
 .pill.dirty::before {
   background: var(--warn);
 }
+/* queued: hollow ring — work that exists but hasn't been given life yet */
+.pill.queued::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--fg-2);
+}
+/* starting: the running colour, breathing — alive but not yet producing */
+.pill.starting::before {
+  background: var(--running);
+  animation: pill-breathe 1.2s ease-in-out infinite;
+}
+@keyframes pill-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill.starting::before {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+/* pills inline in filled controls (e.g. the create button while starting)
+   read in the control's own colour, not the page foreground */
+button .pill {
+  color: inherit;
+}
+
+/* Multi-tab presence: floats over the terminal's top-right so it reads as a
+   property of the shared pane, not of this tab's chrome */
+.presence-badge {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-3);
+  z-index: 2;
+  padding: 1px 6px;
+  border: 1px solid var(--border-1);
+  border-radius: 9px;
+  background: var(--bg-2);
+  color: var(--fg-2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  pointer-events: auto;
+}
 
 /* ---- Terminal ---- */
 .term-head {
@@ -1113,20 +1161,39 @@ select {
 }
 .q-status {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--mono);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  width: 58px;
+  width: 64px;
 }
+.q-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+/* queued: same hollow-ring language as .pill.queued */
 .q-pending {
   color: var(--fg-2);
+}
+.q-pending::before {
+  box-shadow: inset 0 0 0 1.5px var(--fg-2);
 }
 .q-running {
   color: var(--running);
 }
+.q-running::before {
+  background: var(--running);
+}
 .q-done {
   color: var(--fg-3);
+}
+.q-done::before {
+  background: var(--fg-3);
 }
 .q-cmd {
   flex: 1;

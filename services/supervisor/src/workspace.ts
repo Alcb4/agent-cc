@@ -515,7 +515,19 @@ export class WorkspaceManager {
     // Replay last-known pane content so a fresh tab is not blank.
     const live = this.sessions.get(workspaceId);
     if (live?.scrollback) sub({ type: "output", data: live.scrollback });
-    return ok(() => set.delete(sub));
+    // Multi-tab: every subscriber (including this one) learns the new count,
+    // so each tab can show that the workspace is mirrored elsewhere.
+    this.broadcastPresence(workspaceId);
+    return ok(() => {
+      set.delete(sub);
+      this.broadcastPresence(workspaceId);
+    });
+  }
+
+  private broadcastPresence(workspaceId: string): void {
+    const set = this.listenersFor(workspaceId);
+    const msg = { type: "presence" as const, workspaceId, count: set.size };
+    for (const s of set) s(msg);
   }
 
   sendInput(workspaceId: string, data: string): Result<void> {

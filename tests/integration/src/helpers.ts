@@ -77,6 +77,8 @@ export async function startStack(): Promise<TestStack> {
     GATEWAY_PORT: String(gatewayPort),
     OAUTH_PORT: String(oauthPort),
     AGENT_CC_TMUX_SOCKET: tmuxSocket,
+    // Keep write-run deterministic: never spawn `claude -p` from tests.
+    AGENT_CC_MODEL_SUMMARIES: "0",
   };
 
   const spawnSvc = (entry: string): ChildProcess =>

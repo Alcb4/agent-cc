@@ -67,6 +67,7 @@ export default function Page() {
   // Collapsed by default: the rail's job is the project list, not the form.
   const [showNewProject, setShowNewProject] = useState(false);
   const [tName, setTName] = useState("");
+  const [tCreating, setTCreating] = useState(false);
   const [tCmd, setTCmd] = useState("claude"); // default agent: Claude Code (subscription)
   const [tCustom, setTCustom] = useState(false);
   const [tPersona, setTPersona] = useState(""); // bound persona for the new task ("" = none)
@@ -251,7 +252,8 @@ export default function Page() {
   };
 
   const onCreateTask = async (): Promise<void> => {
-    if (!tName || !selectedProjectId) return;
+    if (!tName || !selectedProjectId || tCreating) return;
+    setTCreating(true);
     try {
       const ws = await createWorkspace({
         name: tName,
@@ -266,6 +268,8 @@ export default function Page() {
       setRightTab("memory");
     } catch (e) {
       setToast(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTCreating(false);
     }
   };
 
@@ -538,8 +542,8 @@ export default function Page() {
                         ))}
                       </select>
                     )}
-                    <button className="primary" onClick={() => void onCreateTask()}>
-                      + New task
+                    <button className="primary" disabled={tCreating} onClick={() => void onCreateTask()}>
+                      {tCreating ? <span className="pill starting">starting</span> : "+ New task"}
                     </button>
                   </div>
                 </>
