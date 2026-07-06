@@ -190,6 +190,26 @@ export default function Page() {
   // Destructive-action confirmation, themed (replaces window.confirm).
   const [confirmReq, setConfirmReq] = useState<{ message: string; run: () => void } | null>(null);
 
+  // Theme: dark default, light opt-in (DESIGN.md). The pre-paint script in
+  // layout.tsx applies the persisted value; this state mirrors it for the
+  // toggle label.
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  useEffect(() => {
+    setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setTheme((t) => {
+      const next = t === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      try {
+        localStorage.setItem("theme", next);
+      } catch {
+        // private mode etc. — theme just won't persist
+      }
+      return next;
+    });
+  }, []);
+
   const onDeleteProject = (p: ProjectSummary): void => {
     const msg =
       p.workspaceCount > 0
@@ -309,6 +329,7 @@ export default function Page() {
         },
       },
       { id: "help", label: "Keyboard help", run: () => setHelpOpen(true) },
+      { id: "theme", label: "Toggle theme", hint: theme === "dark" ? "light" : "dark", run: toggleTheme },
     ];
     for (const w of workspaces) {
       cmds.push({
@@ -331,7 +352,7 @@ export default function Page() {
     cmds.push({ id: "go-oauth", label: "Config: OAuth", hint: "connections", run: openConfig("oauth") });
     cmds.push({ id: "go-security", label: "Security: audit log", hint: "LLM + OAuth", run: () => setSecurityOpen(true) });
     return cmds;
-  }, [workspaces]);
+  }, [workspaces, theme, toggleTheme]);
 
   const runningTotal = projects.reduce((n, p) => n + p.runningCount, 0);
 
@@ -339,11 +360,20 @@ export default function Page() {
     <div className="shell">
       <header className="topbar">
         <h1 className="brand">agent-cc</h1>
-        <span className="micro">
-          {active?.model ? `model: ${active.model} · ` : ""}
-          {usage ? `${fmtTokens(usage.inputTokens + usage.outputTokens)} tok · ${fmtCost(usage.costMicrocents)} 24h · ` : ""}
-          {runningTotal} running · ⌘K
-          {toast ? ` · ${toast}` : ""}
+        <span className="topbar-right">
+          <span className="micro">
+            {active?.model ? `model: ${active.model} · ` : ""}
+            {usage ? `${fmtTokens(usage.inputTokens + usage.outputTokens)} tok · ${fmtCost(usage.costMicrocents)} 24h · ` : ""}
+            {runningTotal} running · ⌘K
+            {toast ? ` · ${toast}` : ""}
+          </span>
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+          >
+            {theme === "dark" ? "light" : "dark"}
+          </button>
         </span>
       </header>
 

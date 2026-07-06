@@ -31,6 +31,43 @@
   --s-5: 24px;
   --s-6: 32px;
   --s-7: 48px;
+
+  /* Terminal surface + agent ANSI palette (DESIGN.md). Theme-INDEPENDENT:
+     the terminal inherits colour from the agent, not from us, so it stays
+     dark in light mode. Terminal.tsx reads these at construction. */
+  --term-bg: #0a0a0a;
+  --term-fg: #ededed;
+  --ansi-black: #1a1a1a;
+  --ansi-red: #f87171;
+  --ansi-green: #4ade80;
+  --ansi-yellow: #fbbf24;
+  --ansi-blue: #60a5fa;
+  --ansi-magenta: #c084fc;
+  --ansi-cyan: #22d3ee;
+  --ansi-white: #ededed;
+}
+
+/* Light theme (opt-in via the topbar toggle; DESIGN.md surfaces, warm-grey
+   borders). Status tokens darken so labels keep >=4.5:1 on the light cards;
+   the terminal keeps the term/ansi palette above. */
+[data-theme="light"] {
+  --fg-0: #1a1a1a;
+  --fg-1: #55554f;
+  --fg-2: #8a8a84;
+  --fg-3: #c2c2bc;
+  --bg-0: #fafaf9;
+  --bg-1: #ffffff;
+  --bg-2: #f4f4f3;
+  --bg-3: #e8e8e6;
+  --border-1: #e8e8e6;
+  --border-2: #d8d8d4;
+  --border-3: #c2c2bc;
+  --running: #15803d;
+  --ended: #55554f;
+  --error: #b91c1c;
+  --idle: #8a8a84;
+  --warn: #a16207;
+  --info: #1d4ed8;
 }
 
 * {
@@ -155,6 +192,19 @@ input {
   font-weight: 500;
   font-size: 13px;
   color: var(--fg-0);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.theme-toggle {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .panels {
@@ -493,6 +543,8 @@ input {
   position: relative;
   flex: 1;
   min-height: 0;
+  /* stays dark in light mode — the terminal is the agent's surface */
+  background: var(--term-bg);
 }
 
 .term-overlay {

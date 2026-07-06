@@ -49,11 +49,10 @@ export function Terminal({
       const { FitAddon } = await import("@xterm/addon-fit");
       if (disposed || !hostRef.current) return;
 
-      // DESIGN.md locks the agent ANSI palette to the status tokens so
-      // agent-output green matches the chrome's running-green (xterm's
-      // defaults diverge, e.g. green #0dbc79). Read the tokens from
-      // globals.css so there is one source of truth; hex fallbacks cover the
-      // pre-style-load edge. Magenta/cyan exist only in the ANSI palette.
+      // DESIGN.md locks the agent ANSI palette; read the theme-INDEPENDENT
+      // --term-*/--ansi-* tokens from globals.css (single source of truth,
+      // and the terminal stays dark in light mode — it is the agent's
+      // surface, not chrome). Hex fallbacks cover the pre-style-load edge.
       const css = getComputedStyle(document.documentElement);
       const tok = (name: string, fallback: string): string =>
         css.getPropertyValue(name).trim() || fallback;
@@ -61,16 +60,16 @@ export function Terminal({
         fontFamily: '"JetBrains Mono", monospace',
         fontSize,
         theme: {
-          background: tok("--bg-0", "#0a0a0a"),
-          foreground: tok("--fg-0", "#ededed"),
-          black: tok("--bg-2", "#1a1a1a"),
-          red: tok("--error", "#f87171"),
-          green: tok("--running", "#4ade80"),
-          yellow: tok("--warn", "#fbbf24"),
-          blue: tok("--info", "#60a5fa"),
-          magenta: "#c084fc",
-          cyan: "#22d3ee",
-          white: tok("--fg-0", "#ededed"),
+          background: tok("--term-bg", "#0a0a0a"),
+          foreground: tok("--term-fg", "#ededed"),
+          black: tok("--ansi-black", "#1a1a1a"),
+          red: tok("--ansi-red", "#f87171"),
+          green: tok("--ansi-green", "#4ade80"),
+          yellow: tok("--ansi-yellow", "#fbbf24"),
+          blue: tok("--ansi-blue", "#60a5fa"),
+          magenta: tok("--ansi-magenta", "#c084fc"),
+          cyan: tok("--ansi-cyan", "#22d3ee"),
+          white: tok("--ansi-white", "#ededed"),
         },
         cursorBlink: !readOnly,
         disableStdin: readOnly,
