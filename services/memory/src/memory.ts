@@ -114,6 +114,33 @@ export function writeRun(
   return item;
 }
 
+// Seed a forked workspace's memory from its source: copy every memory item
+// (fresh ids, original timestamps so recency ordering carries over). A fork
+// continues the same piece of work, so the compounding context comes with it.
+export function copyWorkspaceMemory(db: DB, sourceId: string, targetId: string): number {
+  const rows = db
+    .prepare(`SELECT * FROM memory_items WHERE workspace_id = ? ORDER BY created_at ASC`)
+    .all(sourceId) as Array<{
+    id: string;
+    workspace_id: string;
+    type: MemoryItem["type"];
+    body: string;
+    tags_json: string;
+    created_at: string;
+  }>;
+  for (const r of rows) {
+    insertItem(db, {
+      id: randomUUID(),
+      workspaceId: targetId,
+      type: r.type,
+      body: r.body,
+      tags: JSON.parse(r.tags_json) as string[],
+      createdAt: r.created_at,
+    });
+  }
+  return rows.length;
+}
+
 // 5-line run summary from the final pane state. Heuristic for Slice 1: the last
 // few meaningful lines plus the exit code. A model-generated summary is a later
 // refinement once the gateway exists.

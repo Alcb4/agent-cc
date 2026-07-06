@@ -1,5 +1,7 @@
 "use client";
 
+import { trapTab } from "@/lib/a11y";
+
 import { useCallback, useEffect, useState } from "react";
 import type { AuditEntry } from "@agent-cc/shared";
 import { getAuditLog } from "@/lib/api";
@@ -44,7 +46,10 @@ export function SecurityPanel({ open, onClose }: { open: boolean; onClose: () =>
           // inside it on re-renders
           if (el && !el.contains(document.activeElement)) el.focus();
         }}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+          trapTab(e);
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="subtabs">

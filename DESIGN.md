@@ -68,6 +68,13 @@
 | 2026-06-28 | Status pills: 6px dot + label, 1px border, no fill | Colour is the signal; no decorative fills. |
 | 2026-06-28 | No purple gradients, no 3-column feature grids, no hero sections, no colored left-borders, no emoji-as-design | Anti-AI-slop; terminal is the brand. |
 | 2026-06-28 | Anti-pattern enforcement: reject any PR that introduces decorative colour, generic SaaS patterns, or marketing-tone copy | Drift happens silently; codify the rules so the next contributor (or future-you) doesn't re-introduce them. |
+| 2026-07-06 | Terminal stays dark in light mode, on theme-independent `--term-*`/`--ansi-*` tokens | The terminal is the agent's surface, not chrome; the locked ANSI palette has one source of truth (globals.css) that Terminal.tsx reads at construction. |
+| 2026-07-06 | Light theme darkens the six status tokens (e.g. running `#15803d`) | The dark-mode 400-series fails contrast on white; labels must keep ≥4.5:1 against `--bg-1`/`--bg-2` in both themes. |
+| 2026-07-06 | Activity badge says "waiting" (amber), never "idle" | The wire state `idle` collided with the grey `--idle` status token; amber-while-running means "the agent is waiting on you" — say that. CSS hooks stay keyed on the wire state (`act-idle`). |
+| 2026-07-06 | Rail leads with the project list; the New-project form opens on demand (stays mounted, hidden, so scan state survives cancel) | The rail's job is the work, not the creation chrome; forced open only when no projects exist. |
+| 2026-07-06 | Destructive confirms are a themed `ConfirmDialog` (alertdialog, focused danger button), never `window.confirm` | The two highest-stakes actions shouldn't be the only UI outside the design system. |
+| 2026-07-06 | Fork = new worktree/branch cut from the source branch tip, sharing the source's base; memory items copy to the fork | Committed work carries over, uncommitted stays put (safe on a live session); a fork continues the same work, so the compounding context comes with it. |
+| 2026-07-06 | One `--control-h: 28px` token for every interactive control | The 28px minimum was enforced by 14 scattered literals; one token ends the drift. |
 
 ## Anti-Patterns (rejected explicitly)
 - **Purple / blue gradients** as accents or backgrounds. Ever.
@@ -90,4 +97,6 @@
 ## Open Decisions (deferred)
 - **Status pill colour spec per state** — partially specified (running/ended/error/idle/warn/info are locked); the visual treatment of "queued" and "starting" is implied but not pixel-perfect.
 - **Multiple browser tabs on the same workspace race policy** — engineering decision, not a design decision. Two control-mode clients in two tabs = two streams; needs a UI choice (mirror? last-writer-wins?).
-- **"Create workspace" flow** — modal vs. dedicated page vs. inline form. The empty state has a primary button; what it opens is an open question.
+
+## Decisions closed (previously open)
+- **"Create workspace" flow** — resolved 2026-07-06: inline form in the rail, collapsed behind a `Projects / + New` header; forced open only in the empty state. Not a modal, not a page.

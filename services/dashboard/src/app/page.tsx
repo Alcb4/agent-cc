@@ -442,20 +442,19 @@ export default function Page() {
 
           {tab === "projects" && (
             <>
-              {formOpen ? (
-                <div className="stack">
-                  <span className="micro">New project</span>
-                  <input placeholder="name" value={pName} onChange={(e) => setPName(e.target.value)} />
-                  <ProjectRootPicker value={pRepo} onChange={setPRepo} onToast={setToast} />
-                  <ModelSelect value={pModel} onChange={setPModel} allowEmpty placeholder="default model (optional)" />
-                  <button className="primary" onClick={() => void onCreateProject()}>
-                    + New project
-                  </button>
-                  {!mustCreate && (
-                    <button onClick={onCancelNewProject}>Cancel</button>
-                  )}
-                </div>
-              ) : (
+              {/* The form stays mounted and hides via CSS so ProjectRootPicker
+                  keeps its scan root/entries across open → cancel → reopen. */}
+              <div className="stack" style={formOpen ? undefined : { display: "none" }}>
+                <span className="micro">New project</span>
+                <input placeholder="name" value={pName} onChange={(e) => setPName(e.target.value)} />
+                <ProjectRootPicker value={pRepo} onChange={setPRepo} onToast={setToast} />
+                <ModelSelect value={pModel} onChange={setPModel} allowEmpty placeholder="default model (optional)" />
+                <button className="primary" onClick={() => void onCreateProject()}>
+                  + New project
+                </button>
+                {!mustCreate && <button onClick={onCancelNewProject}>Cancel</button>}
+              </div>
+              {!formOpen && (
                 <div className="panel-head">
                   <h2 className="micro">Projects</h2>
                   <button className="proj-add" onClick={() => setShowNewProject(true)}>
@@ -725,10 +724,23 @@ export default function Page() {
         </aside>
       </div>
 
-      {/* Shown by CSS only below 768px, where the three-pane layout can't work. */}
+      {/* Shown by CSS only below 768px, where the three-pane layout can't work.
+          Read-only summary per DESIGN.md — glanceable status, no controls. */}
       <div className="mobile-note">
         <span>agent-cc is best on a larger screen.</span>
-        <span className="micro">the three-pane dashboard needs ~768px or more</span>
+        <span className="micro">read-only summary · open on a desktop to interact</span>
+        <div className="mobile-summary">
+          {workspaces.length === 0 && (
+            <div className="empty">No tasks in the selected project.</div>
+          )}
+          {workspaces.map((w) => (
+            <div key={w.id} className="mobile-row">
+              <span className={`pill ${w.status}`}>{w.status}</span>
+              <span className="mobile-row-name">{w.name}</span>
+              <span className="micro">{w.stage}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <CommandPalette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />

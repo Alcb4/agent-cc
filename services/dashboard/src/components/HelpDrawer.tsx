@@ -1,5 +1,7 @@
 "use client";
 
+import { trapTab } from "@/lib/a11y";
+
 const SHORTCUTS: Array<[string, string]> = [
   ["⌘K / Ctrl-K", "command palette"],
   ["j / k", "move between workspaces"],
@@ -23,7 +25,10 @@ export function HelpDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           // inside it on re-renders
           if (el && !el.contains(document.activeElement)) el.focus();
         }}
-        onKeyDown={(e) => e.key === "Escape" && onClose()}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+          trapTab(e);
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="panel-head">

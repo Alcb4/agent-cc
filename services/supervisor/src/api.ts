@@ -9,7 +9,7 @@ import type { Logger } from "pino";
 import type { ClientMessage } from "@agent-cc/shared";
 import type { WorkspaceManager } from "./workspace.js";
 import type { ServiceMonitor } from "./services-monitor.js";
-import { getContext, bindPersona, composePersona, getUsageSummary } from "./clients.js";
+import { getContext, bindPersona, composePersona, copyMemory, getUsageSummary } from "./clients.js";
 
 export interface ApiDeps {
   workspaces: WorkspaceManager;
@@ -274,6 +274,13 @@ export async function buildApi(deps: ApiDeps) {
       if (!r.ok) {
         const code = r.error.code === "workspace.not_found" ? 404 : 500;
         return reply.code(code).send(r.error);
+      }
+      // Seed the fork's memory from its source — the fork continues the same
+      // work, so the compounding context comes with it. Best-effort: a failed
+      // copy must not fail the fork.
+      const copied = await copyMemory(deps.memoryBaseUrl, req.params.id, r.value.id);
+      if (!copied.ok) {
+        req.log.warn({ err: copied.error, sourceId: req.params.id, forkId: r.value.id }, "memory copy failed");
       }
       return reply.code(201).send(r.value);
     },

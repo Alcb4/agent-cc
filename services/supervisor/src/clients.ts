@@ -84,6 +84,30 @@ export async function composePersona(
   }
 }
 
+// Seed a forked workspace's memory from its source. Best-effort: a fork is
+// still useful without its inherited context.
+export async function copyMemory(
+  memoryBaseUrl: string,
+  sourceWorkspaceId: string,
+  targetWorkspaceId: string,
+): Promise<Result<{ copied: number }>> {
+  try {
+    const res = await fetch(`${memoryBaseUrl}/memory/copy`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sourceWorkspaceId, targetWorkspaceId }),
+    });
+    if (!res.ok) return err(appError("memory.write_failed", `memory copy ${res.status}`));
+    return ok((await res.json()) as { copied: number });
+  } catch (e) {
+    return err(
+      appError("service.unreachable", "memory service is down. Restart with: agent-cc start.", {
+        cause: (e as Error).message,
+      }),
+    );
+  }
+}
+
 export async function writeRun(
   memoryBaseUrl: string,
   workspaceId: string,

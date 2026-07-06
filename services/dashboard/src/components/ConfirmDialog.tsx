@@ -1,5 +1,7 @@
 "use client";
 
+import { trapTab } from "@/lib/a11y";
+
 // Themed replacement for window.confirm on destructive actions (delete
 // project, discard workspace). Same overlay/dialog pattern as the other
 // modals: Esc or backdrop click cancels; the destructive button is focused
@@ -25,7 +27,10 @@ export function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-label="Confirm action"
-        onKeyDown={(e) => e.key === "Escape" && onCancel()}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onCancel();
+          trapTab(e);
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="confirm-msg">{message}</div>

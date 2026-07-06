@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openDb, insertItem, type DB } from "./db.js";
-import { getContext, writeRun } from "./memory.js";
+import { copyWorkspaceMemory, getContext, writeRun } from "./memory.js";
 
 const WS = "ws-test";
 const SECRET = "sk-abcdefghijklmnopqrstuvwx";
@@ -62,5 +62,24 @@ describe("memory redaction wiring", () => {
     const pack = getContext(db, WS, "");
     expect(pack.recentRuns[0]!.body).toBe("Run ended.\nResume with: claude --resume abc");
     expect(pack.rendered).not.toContain("\x1b");
+  });
+
+  test("copyWorkspaceMemory seeds a fork with the source's items", () => {
+    insertItem(db, {
+      id: randomUUID(),
+      workspaceId: WS,
+      type: "decision",
+      body: "we chose sqlite",
+      tags: [],
+      createdAt: new Date().toISOString(),
+    });
+    writeRun(db, WS, "did the work\nDone.", 0);
+    const copied = copyWorkspaceMemory(db, WS, "ws-fork");
+    expect(copied).toBe(2);
+    const pack = getContext(db, "ws-fork", "");
+    expect(pack.recentDecisions.map((i) => i.body)).toContain("we chose sqlite");
+    expect(pack.recentRuns.length).toBe(1);
+    // source untouched
+    expect(getContext(db, WS, "").recentDecisions.length).toBe(1);
   });
 });

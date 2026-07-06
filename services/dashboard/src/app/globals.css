@@ -32,6 +32,9 @@
   --s-6: 32px;
   --s-7: 48px;
 
+  /* one height for every interactive control (DESIGN.md 28px minimum) */
+  --control-h: 28px;
+
   /* Terminal surface + agent ANSI palette (DESIGN.md). Theme-INDEPENDENT:
      the terminal inherits colour from the agent, not from us, so it stays
      dark in light mode. Terminal.tsx reads these at construction. */
@@ -106,7 +109,7 @@ button {
   border-radius: 4px;
   padding: var(--s-1) var(--s-3);
   cursor: pointer;
-  height: 28px;
+  height: var(--control-h);
 }
 
 button:hover {
@@ -157,7 +160,7 @@ input {
   border: 1px solid var(--border-2);
   border-radius: 4px;
   padding: var(--s-1) var(--s-2);
-  height: 28px;
+  height: var(--control-h);
 }
 
 /* ---- App shell: top bar + three vertical panels ---- */
@@ -312,7 +315,7 @@ input {
 /* project delete — subtle, reveals on row hover */
 .proj-del {
   flex: 0 0 auto;
-  height: 28px;
+  height: var(--control-h);
   padding: 0 6px;
   font-size: 11px;
   border: none;
@@ -729,7 +732,7 @@ select {
   background: var(--bg-2);
   border: 1px solid var(--border-2);
   border-radius: 4px;
-  height: 28px;
+  height: var(--control-h);
 }
 
 .cfg-row {
@@ -797,7 +800,7 @@ select {
 }
 
 .back-grid {
-  height: 28px;
+  height: var(--control-h);
   padding: 0 var(--s-2);
   margin-right: var(--s-2);
   font-size: 11px;
@@ -894,7 +897,7 @@ select {
 }
 
 .watch-ctas button {
-  height: 28px;
+  height: var(--control-h);
   padding: 0 var(--s-2);
   font-size: 11px;
 }
@@ -1007,7 +1010,7 @@ select {
   margin-top: var(--s-2);
 }
 .board-actions button {
-  height: 28px;
+  height: var(--control-h);
   font-size: 11px;
   padding: 0 var(--s-2);
 }
@@ -1018,12 +1021,12 @@ select {
 }
 .board-move {
   flex: 1;
-  height: 28px;
+  height: var(--control-h);
   font-size: 11px;
 }
 .board-remove {
   flex: 0 0 auto;
-  height: 28px;
+  height: var(--control-h);
   padding: 0 var(--s-2);
   font-size: 11px;
   color: var(--fg-2);
@@ -1087,7 +1090,7 @@ select {
 .pr-link {
   display: inline-flex;
   align-items: center;
-  height: 28px;
+  height: var(--control-h);
   padding: 0 var(--s-2);
   font-family: var(--mono);
   font-size: 11px;
@@ -1148,7 +1151,7 @@ select {
 }
 .q-del {
   flex: 0 0 auto;
-  height: 28px;
+  height: var(--control-h);
   padding: 0 var(--s-2);
   font-size: 11px;
 }
@@ -1219,7 +1222,7 @@ select {
 }
 .model-select button {
   flex: 0 0 auto;
-  height: 28px;
+  height: var(--control-h);
   font-size: 11px;
 }
 
@@ -1239,7 +1242,7 @@ select {
 }
 .repo-rootbar button {
   flex: 0 0 auto;
-  height: 28px;
+  height: var(--control-h);
   font-size: 11px;
   padding: 0 var(--s-2);
 }
@@ -1258,7 +1261,7 @@ select {
   justify-content: space-between;
   width: 100%;
   height: auto;
-  min-height: 28px;
+  min-height: var(--control-h);
   border: none;
   border-radius: 0;
   border-bottom: 1px solid var(--border-1);
@@ -1358,5 +1361,35 @@ select {
     padding: var(--s-5);
     text-align: center;
     color: var(--fg-1);
+  }
+  .mobile-summary {
+    width: 100%;
+    max-width: 420px;
+    margin-top: var(--s-4);
+    text-align: left;
+    border: 1px solid var(--border-1);
+    border-radius: 6px;
+    background: var(--bg-1);
+    overflow-y: auto;
+    max-height: 60vh;
+  }
+  .mobile-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-2) var(--s-3);
+    border-bottom: 1px solid var(--border-1);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .mobile-row:last-child {
+    border-bottom: none;
+  }
+  .mobile-row-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fg-0);
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { trapTab } from "@/lib/a11y";
 
 export interface Command {
   id: string;
@@ -80,6 +81,7 @@ export function CommandPalette({
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
+        onKeyDown={trapTab}
         onClick={(e) => e.stopPropagation()}
       >
         <input
