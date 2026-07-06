@@ -238,7 +238,7 @@ input {
 /* project delete — subtle, reveals on row hover */
 .proj-del {
   flex: 0 0 auto;
-  height: 20px;
+  height: 28px;
   padding: 0 6px;
   font-size: 11px;
   border: none;
@@ -653,7 +653,7 @@ select {
 }
 
 .back-grid {
-  height: 22px;
+  height: 28px;
   padding: 0 var(--s-2);
   margin-right: var(--s-2);
   font-size: 11px;
@@ -750,7 +750,7 @@ select {
 }
 
 .watch-ctas button {
-  height: 24px;
+  height: 28px;
   padding: 0 var(--s-2);
   font-size: 11px;
 }
@@ -863,7 +863,7 @@ select {
   margin-top: var(--s-2);
 }
 .board-actions button {
-  height: 24px;
+  height: 28px;
   font-size: 11px;
   padding: 0 var(--s-2);
 }
@@ -874,12 +874,12 @@ select {
 }
 .board-move {
   flex: 1;
-  height: 24px;
+  height: 28px;
   font-size: 11px;
 }
 .board-remove {
   flex: 0 0 auto;
-  height: 24px;
+  height: 28px;
   padding: 0 var(--s-2);
   font-size: 11px;
   color: var(--fg-2);
@@ -943,7 +943,7 @@ select {
 .pr-link {
   display: inline-flex;
   align-items: center;
-  height: 24px;
+  height: 28px;
   padding: 0 var(--s-2);
   font-family: var(--mono);
   font-size: 11px;
@@ -1004,7 +1004,7 @@ select {
 }
 .q-del {
   flex: 0 0 auto;
-  height: 22px;
+  height: 28px;
   padding: 0 var(--s-2);
   font-size: 11px;
 }
@@ -1116,6 +1116,7 @@ select {
   justify-content: space-between;
   width: 100%;
   height: auto;
+  min-height: 28px;
   border: none;
   border-radius: 0;
   border-bottom: 1px solid var(--border-1);
