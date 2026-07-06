@@ -30,7 +30,16 @@ export function Terminal({
   const onEndedRef = useRef(onEnded);
   onEndedRef.current = onEnded;
 
+  // Capture readOnly at mount and keep it OUT of the effect deps: when a
+  // watched session ends, the parent flips readOnly true, and re-running the
+  // effect would dispose the xterm buffer and resubscribe after the supervisor
+  // has already deleted the session — wiping the final output the user is
+  // looking at. A pane keeps the mode it mounted with; ended workspaces mount
+  // read-only via the prop.
+  const readOnlyRef = useRef(readOnly);
+
   useEffect(() => {
+    const readOnly = readOnlyRef.current;
     setConnecting(true);
     let disposed = false;
     let cleanup = (): void => {};
@@ -40,27 +49,35 @@ export function Terminal({
       const { FitAddon } = await import("@xterm/addon-fit");
       if (disposed || !hostRef.current) return;
 
+      // DESIGN.md locks the agent ANSI palette to the status tokens so
+      // agent-output green matches the chrome's running-green (xterm's
+      // defaults diverge, e.g. green #0dbc79). Read the tokens from
+      // globals.css so there is one source of truth; hex fallbacks cover the
+      // pre-style-load edge. Magenta/cyan exist only in the ANSI palette.
+      const css = getComputedStyle(document.documentElement);
+      const tok = (name: string, fallback: string): string =>
+        css.getPropertyValue(name).trim() || fallback;
       const term = new XTerm({
         fontFamily: '"JetBrains Mono", monospace',
         fontSize,
-        // DESIGN.md locks the agent ANSI palette to the status tokens so
-        // agent-output green matches the chrome's running-green (xterm's
-        // defaults diverge, e.g. green #0dbc79).
         theme: {
-          background: "#0a0a0a",
-          foreground: "#ededed",
-          black: "#1a1a1a",
-          red: "#f87171",
-          green: "#4ade80",
-          yellow: "#fbbf24",
-          blue: "#60a5fa",
+          background: tok("--bg-0", "#0a0a0a"),
+          foreground: tok("--fg-0", "#ededed"),
+          black: tok("--bg-2", "#1a1a1a"),
+          red: tok("--error", "#f87171"),
+          green: tok("--running", "#4ade80"),
+          yellow: tok("--warn", "#fbbf24"),
+          blue: tok("--info", "#60a5fa"),
           magenta: "#c084fc",
           cyan: "#22d3ee",
-          white: "#ededed",
+          white: tok("--fg-0", "#ededed"),
         },
         cursorBlink: !readOnly,
         disableStdin: readOnly,
         scrollback: readOnly ? 1000 : 5000,
+        // xterm's supported screen-reader path; an aria-live region on the
+        // host would re-announce the pane on every rendered frame.
+        screenReaderMode: !readOnly,
       });
       const fit = new FitAddon();
       term.loadAddon(fit);
@@ -116,15 +133,15 @@ export function Terminal({
       disposed = true;
       cleanup();
     };
-    // Intentionally NOT depending on onEnded (held in a ref above) so parent
-    // re-renders don't reconnect the socket. Only re-run when the pane identity
-    // or render mode actually changes.
-  }, [workspace.id, readOnly, fontSize]);
+    // Intentionally NOT depending on onEnded or readOnly (held in refs above)
+    // so parent re-renders and end-of-session status flips don't tear down the
+    // pane. Only re-run when the pane identity actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspace.id, fontSize]);
 
   return (
     <div className="term-wrap">
-      {/* aria-live per DESIGN.md so screen readers announce new output */}
-      <div className="term-host" ref={hostRef} aria-live="polite" />
+      <div className="term-host" ref={hostRef} />
       {connecting && (
         <div className="term-overlay">
           <span className="micro">Connecting to session…</span>
