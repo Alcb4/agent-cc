@@ -13,6 +13,7 @@ import { SecurityPanel } from "@/components/SecurityPanel";
 import { ProjectRootPicker } from "@/components/ProjectRootPicker";
 import { ModelSelect } from "@/components/ModelSelect";
 import { activityLabel } from "@/lib/activity";
+import { clickableRow } from "@/lib/a11y";
 import {
   listProjects,
   createProject,
@@ -326,15 +327,15 @@ export default function Page() {
 
   return (
     <div className="shell">
-      <div className="topbar">
-        <span className="brand">agent-cc</span>
+      <header className="topbar">
+        <h1 className="brand">agent-cc</h1>
         <span className="micro">
           {active?.model ? `model: ${active.model} · ` : ""}
           {usage ? `${fmtTokens(usage.inputTokens + usage.outputTokens)} tok · ${fmtCost(usage.costMicrocents)} 24h · ` : ""}
           {runningTotal} running · ⌘K
           {toast ? ` · ${toast}` : ""}
         </span>
-      </div>
+      </header>
 
       {downServices.length > 0 && (
         <div className="banner">
@@ -343,7 +344,7 @@ export default function Page() {
       )}
 
       <div className="panels">
-        <div className="left">
+        <nav className="left" aria-label="Projects and tasks">
           <div className="tabs">
             <button className={tab === "projects" ? "tab active" : "tab"} onClick={() => setTab("projects")}>
               Projects
@@ -385,7 +386,7 @@ export default function Page() {
                 </div>
               ) : (
                 <div className="panel-head">
-                  <span className="micro">Projects</span>
+                  <h2 className="micro">Projects</h2>
                   <button className="proj-add" onClick={() => setShowNewProject(true)}>
                     + New
                   </button>
@@ -396,7 +397,7 @@ export default function Page() {
                 <div
                   key={p.id}
                   className={`proj-row${p.id === selectedProjectId ? " active" : ""}`}
-                  onClick={() => setSelectedProjectId(p.id)}
+                  {...clickableRow(() => setSelectedProjectId(p.id))}
                 >
                   <span className={`dot ${p.runningCount > 0 ? "running" : "idle"}`} />
                   <span className="proj-name">{p.name}</span>
@@ -417,7 +418,7 @@ export default function Page() {
               {selectedProject && (
                 <>
                   <div className="panel-head">
-                    <span className="micro">Tasks · {selectedProject.name}</span>
+                    <h2 className="micro">Tasks · {selectedProject.name}</h2>
                   </div>
                   {workspaces.map((w) => (
                     <WsCard key={w.id} w={w} active={w.id === activeId} onClick={() => setActiveId(w.id)} />
@@ -479,7 +480,7 @@ export default function Page() {
           {(tab === "all" || tab === "board") && (
             <>
               <div className="panel-head">
-                <span className="micro">All workspaces</span>
+                <h2 className="micro">All workspaces</h2>
               </div>
               {workspaces.map((w) => (
                 <WsCard
@@ -494,9 +495,9 @@ export default function Page() {
               ))}
             </>
           )}
-        </div>
+        </nav>
 
-        <div className="centre">
+        <main className="centre">
           {(tab === "all" || tab === "board") && !allFocus ? (
             tab === "all" ? (
               <WatchGrid
@@ -612,13 +613,13 @@ export default function Page() {
                 : "Select a project and create a task. Press ⌘K for commands."}
             </div>
           )}
-        </div>
+        </main>
 
-        <div className="right">
+        <aside className="right" aria-label="Memory and runs">
           {(tab === "all" || tab === "board") && !allFocus ? (
             <>
               <div className="panel-head">
-                <span className="micro">{tab === "board" ? "Board" : "Watch"}</span>
+                <h2 className="micro">{tab === "board" ? "Board" : "Watch"}</h2>
               </div>
               <div className="empty">
                 {tab === "board"
@@ -637,12 +638,12 @@ export default function Page() {
           ) : (
             <>
               <div className="panel-head">
-                <span className="micro">Memory + decisions</span>
+                <h2 className="micro">Memory + decisions</h2>
               </div>
               <div className="empty">Once you have a task, its memory will appear here.</div>
             </>
           )}
-        </div>
+        </aside>
       </div>
 
       <CommandPalette open={paletteOpen} commands={commands} onClose={() => setPaletteOpen(false)} />
@@ -671,7 +672,7 @@ function fmtTokens(n: number): string {
 
 function WsCard({ w, active, onClick }: { w: Workspace; active: boolean; onClick: () => void }) {
   return (
-    <div className={`ws-card${active ? " active" : ""}`} onClick={onClick}>
+    <div className={`ws-card${active ? " active" : ""}`} {...clickableRow(onClick)}>
       <div className="ws-row">
         <span className={`pill ${w.status}`}>{w.status}</span>
         <span>{w.name}</span>

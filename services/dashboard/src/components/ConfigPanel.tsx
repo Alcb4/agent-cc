@@ -46,7 +46,20 @@ export function ConfigPanel({
   );
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="config" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="config"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Configuration"
+        tabIndex={-1}
+        ref={(el) => {
+          // focus the dialog on mount only — don't steal focus from fields
+          // inside it on re-renders
+          if (el && !el.contains(document.activeElement)) el.focus();
+        }}
+        onKeyDown={(e) => e.key === "Escape" && onClose()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="subtabs">
           {tabBtn("providers", "Providers")}
           {tabBtn("personas", "Personas")}

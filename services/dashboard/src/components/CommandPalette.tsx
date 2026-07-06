@@ -23,6 +23,7 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -42,6 +43,13 @@ export function CommandPalette({
   useEffect(() => {
     if (index >= filtered.length) setIndex(Math.max(0, filtered.length - 1));
   }, [filtered, index]);
+
+  // Keep the active row visible as Up/Down moves it (the list scrolls).
+  useEffect(() => {
+    listRef.current
+      ?.querySelector(`#palette-opt-${index}`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [index]);
 
   if (!open) return null;
 
@@ -67,20 +75,33 @@ export function CommandPalette({
 
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="palette" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="palette"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        onClick={(e) => e.stopPropagation()}
+      >
         <input
           ref={inputRef}
           className="palette-input"
+          role="combobox"
+          aria-expanded="true"
+          aria-controls="palette-list"
+          aria-activedescendant={filtered.length > 0 ? `palette-opt-${index}` : undefined}
           placeholder="type a command, or a workspace name…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKey}
         />
-        <div className="palette-list">
+        <div className="palette-list" id="palette-list" role="listbox" ref={listRef}>
           {filtered.length === 0 && <div className="empty">no matches</div>}
           {filtered.map((c, i) => (
             <div
               key={c.id}
+              id={`palette-opt-${i}`}
+              role="option"
+              aria-selected={i === index}
               className={`palette-row${i === index ? " active" : ""}`}
               onMouseEnter={() => setIndex(i)}
               onClick={() => {

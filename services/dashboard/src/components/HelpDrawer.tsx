@@ -12,9 +12,22 @@ export function HelpDrawer({ open, onClose }: { open: boolean; onClose: () => vo
   if (!open) return null;
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="drawer" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Keyboard shortcuts"
+        tabIndex={-1}
+        ref={(el) => {
+          // focus the dialog on mount only — don't steal focus from fields
+          // inside it on re-renders
+          if (el && !el.contains(document.activeElement)) el.focus();
+        }}
+        onKeyDown={(e) => e.key === "Escape" && onClose()}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="panel-head">
-          <span className="micro">Keyboard</span>
+          <h2 className="micro">Keyboard</h2>
         </div>
         <div className="stack">
           {SHORTCUTS.map(([k, v]) => (

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Workspace, ProjectSummary, WorkspaceActivity, WorkspaceStage } from "@agent-cc/shared";
 import { mergeWorkspace, keepWorkspace, discardWorkspace, syncWorkspace, setStage } from "@/lib/api";
 import { activityLabel } from "@/lib/activity";
+import { clickableRow } from "@/lib/a11y";
 
 // K3/K4: a kanban board grouping workspaces by workflow stage (orthogonal to
 // runtime status). Review cards carry the merge/keep/discard decision; any card
@@ -64,7 +65,7 @@ export function StageBoard({
                 const a = activity[w.id];
                 return (
                   <div className="board-card" key={w.id}>
-                    <div className="board-card-main" onClick={() => onFocus(w.id)}>
+                    <div className="board-card-main" {...clickableRow(() => onFocus(w.id))}>
                       <div className="board-card-head">
                         <span className={`pill ${w.status}`}>{w.status}</span>
                         {a?.live ? <span className={`act act-${a.state}`}>{activityLabel(a.state)}</span> : null}

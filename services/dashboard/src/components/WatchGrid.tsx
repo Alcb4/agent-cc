@@ -6,6 +6,7 @@ import { Terminal } from "@/components/Terminal";
 import { sendInput, runWorkspace } from "@/lib/api";
 import { type Cta, loadCtas, saveCtas, DEFAULT_CTAS } from "@/lib/ctas";
 import { activityLabel } from "@/lib/activity";
+import { clickableRow } from "@/lib/a11y";
 
 // B2 — tiled live-watch grid. One read-only pane per workspace, streaming the
 // same supervisor WebSocket as the focused terminal (multi-subscriber + the
@@ -119,7 +120,7 @@ function WatchPane({
 
   return (
     <div className="watch-pane">
-      <div className="watch-head" onClick={() => onFocus(w.id)}>
+      <div className="watch-head" {...clickableRow(() => onFocus(w.id))}>
         <span className={`pill ${w.status}`}>{w.status}</span>
         {act?.live ? <span className={`act act-${act.state}`}>{activityLabel(act.state)}</span> : null}
         <span className="watch-name">{w.name}</span>
@@ -132,8 +133,10 @@ function WatchPane({
         {live ? (
           <>
             <Terminal workspace={w} readOnly fontSize={11} onEnded={onRefresh} />
-            {/* transparent overlay: click focuses the pane without stealing xterm selection logic */}
-            <div className="watch-overlay" onClick={() => onFocus(w.id)} />
+            {/* transparent overlay: click focuses the pane without stealing xterm
+                selection logic. Hidden from AT — the same action is keyboard-
+                reachable via the pane header row. */}
+            <div className="watch-overlay" aria-hidden="true" onClick={() => onFocus(w.id)} />
           </>
         ) : (
           <div className="watch-dead">
