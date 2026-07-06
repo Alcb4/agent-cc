@@ -7,10 +7,6 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    },
-    "./redaction": {
-      "types": "./src/redaction.ts",
-      "default": "./src/redaction.ts"
     }
   },
   "scripts": {

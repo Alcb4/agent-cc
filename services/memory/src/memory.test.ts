@@ -48,4 +48,19 @@ describe("memory redaction wiring", () => {
     expect(pack.rendered).not.toContain("<system>");
     expect(pack.rendered).toContain("<sys>");
   });
+
+  test("getContext strips ANSI from legacy rows before render and injection", () => {
+    // Simulates a row written before ingestion stripped escape sequences.
+    insertItem(db, {
+      id: randomUUID(),
+      workspaceId: WS,
+      type: "recent_run_summary",
+      body: "Run ended.\n\x1b[7C\x1b[?25h\x1b[2mResume with\x1b[22m: claude --resume abc",
+      tags: ["run"],
+      createdAt: new Date().toISOString(),
+    });
+    const pack = getContext(db, WS, "");
+    expect(pack.recentRuns[0]!.body).toBe("Run ended.\nResume with: claude --resume abc");
+    expect(pack.rendered).not.toContain("\x1b");
+  });
 });

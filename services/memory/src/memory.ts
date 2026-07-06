@@ -26,13 +26,20 @@ function nowIso(): string {
 }
 
 export function getContext(db: DB, workspaceId: string, taskHint: string): ContextPack {
-  const recentDecisions = recentByType(db, workspaceId, "decision", TOP_K);
-  const gotchas = recentByType(db, workspaceId, "gotcha", TOP_K);
-  const recentRuns = recentByType(db, workspaceId, "recent_run_summary", TOP_K);
+  // Rows written before ingestion stripped escape sequences may still carry raw
+  // ANSI; clean at the read boundary so every consumer (dashboard panels, the
+  // rendered pack injected into fresh sessions) gets clean text — and so SGR
+  // codes can't split a credential past the redactors downstream.
+  const clean = (i: MemoryItem): MemoryItem => ({ ...i, body: stripControlSequences(i.body) });
+  const recentDecisions = recentByType(db, workspaceId, "decision", TOP_K).map(clean);
+  const gotchas = recentByType(db, workspaceId, "gotcha", TOP_K).map(clean);
+  const recentRuns = recentByType(db, workspaceId, "recent_run_summary", TOP_K).map(clean);
 
   // Fold in keyword-relevant items for the task hint (deduped against the above).
   const seen = new Set([...recentDecisions, ...gotchas, ...recentRuns].map((i) => i.id));
-  const relevant = searchItems(db, workspaceId, taskHint, TOP_K).filter((i) => !seen.has(i.id));
+  const relevant = searchItems(db, workspaceId, taskHint, TOP_K)
+    .filter((i) => !seen.has(i.id))
+    .map(clean);
 
   const pack: ContextPack = {
     workspaceId,

@@ -1,9 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-// Subpath import: the shared barrel pulls in node:fs (env.ts), which can't be
-// bundled for the client. redaction.ts is dependency-free and browser-safe.
-import { stripControlSequences } from "@agent-cc/shared/redaction";
 import type { ContextPack, MemoryItem, QueueItem, Schedule } from "@agent-cc/shared";
 import {
   getContext,
@@ -86,12 +83,10 @@ export function RightPanel({
 }
 
 function Row({ item }: { item: MemoryItem }) {
-  // Summaries written before ingestion stripped escape sequences may still
-  // contain raw ANSI; strip defensively so stored history renders clean.
   return (
     <div className="mem-row">
       <div className="mem-type">{item.type.replace(/_/g, " ")}</div>
-      <div className="mem-body">{stripControlSequences(item.body)}</div>
+      <div className="mem-body">{item.body}</div>
     </div>
   );
 }
