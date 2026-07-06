@@ -1,0 +1,39 @@
+node_modules/
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+coverage/
+
+# Local data stores (never commit)
+*.db
+*.db-shm
+*.db-wal
+.agent_cc/
+
+# Secrets / key material (defense in depth — these live in ~/.agent_cc, not here)
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+
+# Internal working / planning docs (kept locally, never published)
+/HANDOFF.md
+/HANDOVER.md
+/AGENTS.md
+/briefs/
+/docs/ceo-plans/
+/docs/plans/
+
+# Test artifacts
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+tests/e2e/fixture.json
+
+# Editor / OS
+.DS_Store
+*.log
+
+# Test scratch
+/tmp-test/

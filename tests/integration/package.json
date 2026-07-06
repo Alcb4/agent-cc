@@ -1,0 +1,19 @@
+{
+  "name": "@agent-cc/integration",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agent-cc/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8",
+    "ws": "^8.18.0"
+  }
+}

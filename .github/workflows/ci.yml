@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # tmux is required — the supervisor drives it in control mode.
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19"
+          cache: pnpm
+
+      # Native modules (better-sqlite3, node-pty, sodium-native) compile here.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Vitest suites. Playwright e2e is excluded — it needs a browser and the
+      # default ports free, so it runs locally before dashboard PRs.
+      - name: Test
+        run: pnpm exec turbo run test --filter=!@agent-cc/e2e

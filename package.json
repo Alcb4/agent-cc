@@ -1,0 +1,40 @@
+{
+  "name": "agent-cc",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.19 <21"
+  },
+  "bin": {
+    "agent-cc": "bin/agent-cc.mjs"
+  },
+  "scripts": {
+    "setup": "node bin/agent-cc.mjs setup",
+    "start": "node bin/agent-cc.mjs start",
+    "stop": "node bin/agent-cc.mjs stop",
+    "status": "node bin/agent-cc.mjs status",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "@types/sodium-native": "^2.3.9",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "node-pty",
+      "sodium-native"
+    ]
+  }
+}
