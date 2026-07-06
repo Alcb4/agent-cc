@@ -12,6 +12,7 @@ import { ConfigPanel, type ConfigTab } from "@/components/ConfigPanel";
 import { SecurityPanel } from "@/components/SecurityPanel";
 import { ProjectRootPicker } from "@/components/ProjectRootPicker";
 import { ModelSelect } from "@/components/ModelSelect";
+import { activityLabel } from "@/lib/activity";
 import {
   listProjects,
   createProject,
@@ -531,7 +532,7 @@ export default function Page() {
                   <span className={`pill ${active.status}`}>{active.status}</span>
                   {activity[active.id]?.live ? (
                     <span className={`act act-${activity[active.id]!.state}`}>
-                      {activity[active.id]!.state}
+                      {activityLabel(activity[active.id]!.state)}
                     </span>
                   ) : null}
                   {active.model ? <span style={{ color: "var(--fg-2)" }}> · {active.model}</span> : null}

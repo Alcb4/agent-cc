@@ -5,6 +5,7 @@ import type { Workspace, ProjectSummary, WorkspaceActivity } from "@agent-cc/sha
 import { Terminal } from "@/components/Terminal";
 import { sendInput, runWorkspace } from "@/lib/api";
 import { type Cta, loadCtas, saveCtas, DEFAULT_CTAS } from "@/lib/ctas";
+import { activityLabel } from "@/lib/activity";
 
 // B2 — tiled live-watch grid. One read-only pane per workspace, streaming the
 // same supervisor WebSocket as the focused terminal (multi-subscriber + the
@@ -120,7 +121,7 @@ function WatchPane({
     <div className="watch-pane">
       <div className="watch-head" onClick={() => onFocus(w.id)}>
         <span className={`pill ${w.status}`}>{w.status}</span>
-        {act?.live ? <span className={`act act-${act.state}`}>{act.state}</span> : null}
+        {act?.live ? <span className={`act act-${act.state}`}>{activityLabel(act.state)}</span> : null}
         <span className="watch-name">{w.name}</span>
         <span className="watch-meta">
           {projectName} · {w.branch}

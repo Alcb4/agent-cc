@@ -1010,6 +1010,11 @@ select {
 }
 
 /* ---- B3 activity badge (active / idle) ---- */
+/* When the badge directly follows a status pill (terminal header, board and
+   watch cards) give the two indicators breathing room instead of mashing. */
+.pill + .act {
+  margin-left: var(--s-2);
+}
 .act {
   display: inline-flex;
   align-items: center;
