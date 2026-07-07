@@ -521,6 +521,7 @@ export default function Page() {
                       active={w.id === activeId}
                       onClick={() => setActiveId(w.id)}
                       onRemove={onRemoveTask}
+                      orphaned={activity[w.id]?.orphaned}
                     />
                   ))}
                   <div className="stack">
@@ -592,6 +593,7 @@ export default function Page() {
                     setAllFocus(true);
                   }}
                   onRemove={onRemoveTask}
+                  orphaned={activity[w.id]?.orphaned}
                 />
               ))}
             </>
@@ -649,7 +651,17 @@ export default function Page() {
                   <span className="term-branch" title={active.branch}>
                     {active.branch}
                   </span>{" "}
-                  · <span className={`pill ${active.status}`}>{active.status}</span>
+                  ·{" "}
+                  {activity[active.id]?.orphaned ? (
+                    <span
+                      className="pill orphaned"
+                      title="The session is alive but its git worktree was deleted — it can still chat, but can't do file or git work."
+                    >
+                      worktree gone
+                    </span>
+                  ) : (
+                    <span className={`pill ${active.status}`}>{active.status}</span>
+                  )}
                   {activity[active.id]?.live ? (
                     <span className={`act act-${activity[active.id]!.state}`}>
                       {activityLabel(activity[active.id]!.state)}
@@ -697,6 +709,15 @@ export default function Page() {
                   )}
                 </div>
               </div>
+              {activity[active.id]?.orphaned && (
+                <div className="term-note term-note-warn">
+                  <span className="micro">
+                    Worktree deleted — this session is orphaned. It can still chat, but can’t
+                    read/write files or run git. Copy anything useful out of the pane, then remove
+                    the task (its memory rolls up to the project).
+                  </span>
+                </div>
+              )}
               {active.status === "ended" && (
                 <div className="term-note">
                   <span className="micro">
@@ -819,11 +840,13 @@ function WsCard({
   active,
   onClick,
   onRemove,
+  orphaned,
 }: {
   w: Workspace;
   active: boolean;
   onClick: () => void;
   onRemove?: (w: Workspace) => void;
+  orphaned?: boolean;
 }) {
   // An ended/errored task is terminal — safe to remove. A running task must be
   // ended first, so it has no ✕ (matches the discard backend, which kills first).
@@ -831,7 +854,16 @@ function WsCard({
   return (
     <div className={`ws-card${active ? " active" : ""}`} {...clickableRow(onClick)}>
       <div className="ws-row">
-        <span className={`pill ${w.status}`}>{w.status}</span>
+        {orphaned ? (
+          <span
+            className="pill orphaned"
+            title="The session is alive but its git worktree was deleted — it can still chat, but can't do file or git work. Remove it (its memory rolls up to the project)."
+          >
+            worktree gone
+          </span>
+        ) : (
+          <span className={`pill ${w.status}`}>{w.status}</span>
+        )}
         <span className="ws-name">{w.name}</span>
         {onRemove && removable && (
           <button

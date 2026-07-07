@@ -122,6 +122,9 @@ export class WorkspaceManager {
   // keeps receiving events (e.g. worktree.dirty) even when no session is live.
   private listeners = new Map<string, Set<Subscriber>>();
   private lastDirty = new Map<string, boolean>();
+  // Workspaces whose git worktree the monitor found deleted while a session is
+  // still alive — surfaced in the activity snapshot so the UI can label them.
+  private orphaned = new Set<string>();
   private monitorTimer: ReturnType<typeof setInterval> | null = null;
   private activityTimer: ReturnType<typeof setInterval> | null = null;
   private schedulerTimer: ReturnType<typeof setInterval> | null = null;
@@ -384,6 +387,7 @@ export class WorkspaceManager {
     deleteWorkspace(this.db, id);
     this.listeners.delete(id);
     this.lastDirty.delete(id);
+    this.orphaned.delete(id);
     this.log.info({ workspaceId: id }, "workspace discarded");
     return ok(undefined);
   }
@@ -599,10 +603,12 @@ export class WorkspaceManager {
       if (w.stage === "done") continue;
       const probe = await this.worktrees.probe(w.worktreePath);
       if (!probe.alive) {
+        this.orphaned.add(w.id);
         this.emit(w.id, { type: "worktree.orphaned", workspaceId: w.id });
         if (w.status !== "error") setWorkspaceStatus(this.db, w.id, "error", nowIso());
         continue;
       }
+      this.orphaned.delete(w.id);
       const prev = this.lastDirty.get(w.id);
       if (prev !== probe.dirty) {
         this.lastDirty.set(w.id, probe.dirty);
@@ -662,12 +668,14 @@ export class WorkspaceManager {
   // Current activity for one workspace (null state when no live session).
   activity(workspaceId: string): WorkspaceActivity {
     const live = this.sessions.get(workspaceId);
-    if (!live) return { workspaceId, live: false, state: null, idleMs: 0 };
+    const orphaned = this.orphaned.has(workspaceId);
+    if (!live) return { workspaceId, live: false, state: null, idleMs: 0, orphaned };
     return {
       workspaceId,
       live: true,
       state: live.activity,
       idleMs: Date.now() - live.lastOutputAt,
+      orphaned,
     };
   }
 
@@ -680,6 +688,7 @@ export class WorkspaceManager {
       live: true,
       state: live.activity,
       idleMs: now - live.lastOutputAt,
+      orphaned: this.orphaned.has(workspaceId),
     }));
   }
 

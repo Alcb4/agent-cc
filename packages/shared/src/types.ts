@@ -230,4 +230,8 @@ export interface WorkspaceActivity {
   live: boolean;
   state: ActivityState | null; // null when not live
   idleMs: number; // ms since last pane output (0 when not live)
+  // The session is alive but its git worktree was deleted out from under it
+  // (the process holds a now-deleted cwd): interactive, but cannot do real file
+  // or git work. Surfaced so the UI can say "worktree gone" instead of a bare error.
+  orphaned: boolean;
 }

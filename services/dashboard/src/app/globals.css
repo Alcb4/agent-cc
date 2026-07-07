@@ -409,6 +409,13 @@ input {
 .pill.dirty::before {
   background: var(--warn);
 }
+/* orphaned: session alive but its worktree was deleted — amber, not a red error */
+.pill.orphaned {
+  color: var(--warn);
+}
+.pill.orphaned::before {
+  background: var(--warn);
+}
 /* queued: hollow ring — work that exists but hasn't been given life yet */
 .pill.queued::before {
   background: transparent;
@@ -552,6 +559,13 @@ button .pill {
   padding: var(--s-1) var(--s-3);
   background: var(--bg-1);
   border-bottom: 1px solid var(--border-1);
+}
+/* warning variant: worktree-gone / orphaned session */
+.term-note-warn {
+  border-left: 2px solid var(--warn);
+}
+.term-note-warn .micro {
+  color: var(--warn);
 }
 
 .term-actions {
