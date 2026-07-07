@@ -19,6 +19,7 @@ import {
   type ActivityState,
   type WorkspaceActivity,
   type WorkspaceStage,
+  type WorkspaceStatus,
   type QueueItem,
   type Schedule,
 } from "@agent-cc/shared";
@@ -63,6 +64,23 @@ const SCROLLBACK_LIMIT = 256 * 1024; // bytes of recent output retained per sess
 const MONITOR_INTERVAL_MS = 30_000; // worktree liveness probe cadence (T24)
 const ACTIVITY_INTERVAL_MS = 1_500; // B3 idle-detection tick cadence
 const SCHEDULER_INTERVAL_MS = 30_000; // N3 cron check cadence (minute granularity)
+
+// What crash recovery should do with a tracked workspace, given whether its tmux
+// session is still alive on the named socket. Pure so the decision is unit-tested
+// without a live stack:
+//   - alive + terminal status (ended/error) → revive: a clean end kills the tmux
+//     session, so an ended/errored workspace whose session survived is status
+//     drift from an abrupt crash — reattach and flip back to running.
+//   - alive + any other status → reattach the stream, leave the status as-is.
+//   - dead + running → mark-ended: the session died while the supervisor was down.
+//   - dead + any other status → leave: already terminal / never started.
+export function recoveryAction(
+  status: WorkspaceStatus,
+  sessionAlive: boolean,
+): "reattach" | "revive" | "mark-ended" | "leave" {
+  if (sessionAlive) return status === "ended" || status === "error" ? "revive" : "reattach";
+  return status === "running" ? "mark-ended" : "leave";
+}
 
 type Subscriber = (msg: ServerMessage) => void;
 
@@ -434,29 +452,46 @@ export class WorkspaceManager {
 
   // Crash recovery (T4): the tmux server lives on its own named socket, so
   // sessions survive a supervisor crash. On restart, match each tracked session
-  // by name and re-stream it via a fresh control-mode client. Sessions that died
-  // while the supervisor was down are marked ended.
+  // by name and re-stream it via a fresh control-mode client.
+  //
+  // A clean session end kills its tmux session, so a workspace marked ended/error
+  // whose tmux session is nonetheless still alive is status drift from an abrupt
+  // crash (the dashboard/supervisor died, the detached agent kept running). Revive
+  // those too — the live agent still holds its full context — so the task comes
+  // back watchable instead of stranded as "ended" with no way to reach it.
   recover(): void {
     let reattached = 0;
+    let revived = 0;
     for (const w of this.list()) {
-      if (w.status !== "running") continue;
+      if (this.sessions.has(w.id)) continue; // already wired
       const tmux = new TmuxSession(this.cfg, w.tmuxSessionName);
-      if (!tmux.hasSession()) {
+      const action = recoveryAction(w.status, tmux.hasSession());
+      if (action === "mark-ended") {
         setWorkspaceStatus(this.db, w.id, "ended", nowIso());
         this.log.info({ workspaceId: w.id }, "tracked session gone; marked ended");
         continue;
       }
+      if (action === "leave") continue;
+
       const attached = tmux.attach(120, 32);
-      if (attached.ok) {
-        this.wire(w.id, tmux);
-        reattached += 1;
-        this.log.info({ workspaceId: w.id, session: w.tmuxSessionName }, "reattached surviving session");
-      } else {
-        setWorkspaceStatus(this.db, w.id, "error", nowIso());
+      if (!attached.ok) {
+        if (w.status === "running") setWorkspaceStatus(this.db, w.id, "error", nowIso());
         this.log.warn({ workspaceId: w.id, err: attached.error }, "reattach failed");
+        continue;
       }
+      this.wire(w.id, tmux);
+      reattached += 1;
+      if (action === "revive") {
+        // Status drift: the session survived but the workspace was flipped to a
+        // terminal state by the crash — bring it back to a live, watchable state.
+        setWorkspaceStatus(this.db, w.id, "running", nowIso());
+        setWorkspaceStage(this.db, w.id, "active", nowIso());
+        revived += 1;
+        this.log.info({ workspaceId: w.id, prev: w.status }, "revived orphaned session (status drift)");
+      }
+      this.log.info({ workspaceId: w.id, session: w.tmuxSessionName }, "reattached surviving session");
     }
-    if (reattached > 0) this.log.info({ reattached }, "crash recovery complete");
+    if (reattached > 0) this.log.info({ reattached, revived }, "crash recovery complete");
   }
 
   private wire(workspaceId: string, tmux: TmuxSession): void {
